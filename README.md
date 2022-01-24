@@ -1,2 +1,2 @@
-# SpotifyPlaylistFilter
+# PlaylistFilterForSpotify
  WIP!
