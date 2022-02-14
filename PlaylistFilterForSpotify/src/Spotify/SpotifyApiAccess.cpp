@@ -29,7 +29,7 @@ void SpotifyApiAccess::refreshAccessToken()
     access_token = r_json["access_token"].get<std::string>();
 }
 
-std::tuple<std::vector<TrackData>, std::unordered_map<std::string, CoverInfo>>
+std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
 SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
 {
     cpr::Response r = cpr::Get(
@@ -37,8 +37,8 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
     auto total = json::parse(r.text)["total"].get<uint32_t>();
 
-    std::vector<TrackData> playlistData;
-    playlistData.reserve(total);
+    std::vector<Track> playlist;
+    playlist.reserve(total);
     std::unordered_map<std::string, CoverInfo> coverTable;
 
     // todo: could parallelize some of this (at least processing tracks from one request)
@@ -48,7 +48,6 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
     // const std::string nameSeparator = utf8_encode(L", ");
     const std::string nameSeparator = ", ";
     int requestCountLimit = 50;
-    GLuint freeLayer = 1;
     int iteration = 0;
     std::string queryUrl =
         "https://api.spotify.com/v1/playlists/" + playlistID +
@@ -79,30 +78,30 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
         // load track data from first requst (names & ids)
         for(auto j = 0; j < r_json["items"].size(); j++)
         {
-            const auto& track = r_json["items"][j]["track"];
+            const auto& track_json = r_json["items"][j]["track"];
 
-            const auto& trackNameE = track["name"].get<std::string>();
+            const auto& trackNameE = track_json["name"].get<std::string>();
 
-            const auto& id = track["id"].get<std::string>();
+            const auto& id = track_json["id"].get<std::string>();
             ids += id + ",";
 
             std::string artistsNamesE;
-            for(auto i = 0; i < track["artists"].size(); i++)
+            for(auto i = 0; i < track_json["artists"].size(); i++)
             {
-                const auto& artistNameE = track["artists"][i]["name"].get<std::string>();
+                const auto& artistNameE = track_json["artists"][i]["name"].get<std::string>();
                 artistsNamesE += artistNameE;
-                if(i < track["artists"].size() - 1)
+                if(i < track_json["artists"].size() - 1)
                 {
                     artistsNamesE += nameSeparator;
                 }
             }
 
-            const auto& albumId = track["album"]["id"].get<std::string>();
-            const auto& albumNameE = track["album"]["name"].get<std::string>();
+            const auto& albumId = track_json["album"]["id"].get<std::string>();
+            const auto& albumNameE = track_json["album"]["name"].get<std::string>();
 
-            auto& trackData = playlistData.emplace_back(
+            auto& track = playlist.emplace_back(
                 iteration * requestCountLimit + j, id, trackNameE, artistsNamesE, albumId, albumNameE);
-            trackData.features[8] = track["popularity"].get<int>() / 100.f;
+            track.features[8] = track_json["popularity"].get<int>() / 100.f;
 
             // create and/or link to album table
             auto it = coverTable.find(albumId);
@@ -114,15 +113,15 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
                 {
                     return (*(--json.end()));
                 };
-                const std::string& coverUrl = lastElement(track["album"]["images"])["url"].get<std::string>();
-                CoverInfo info{.url = coverUrl, .layer = freeLayer, .id = 420};
-                freeLayer++;
+                const std::string& coverUrl =
+                    lastElement(track_json["album"]["images"])["url"].get<std::string>();
+                CoverInfo info{.url = coverUrl, .layer = 0, .id = 420};
                 auto newEntry = coverTable.emplace(albumId, info);
-                trackData.coverInfoPtr = &(newEntry.first->second);
+                track.coverInfoPtr = &(newEntry.first->second);
             }
             else
             {
-                trackData.coverInfoPtr = &(it->second);
+                track.coverInfoPtr = &(it->second);
             }
         }
         ids.pop_back();
@@ -137,20 +136,20 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
         {
             const int trackIndex = iteration * requestCountLimit + i;
             // ensure ids werent mixed up somehow
-            assert(feature_json["audio_features"][i]["id"].get<std::string>() == playlistData[trackIndex].id);
+            assert(feature_json["audio_features"][i]["id"].get<std::string>() == playlist[trackIndex].id);
 
             const auto& trackFeatures = feature_json["audio_features"][i];
 
-            auto& trackData = playlistData[trackIndex];
+            auto& track = playlist[trackIndex];
 
-            trackData.features[0] = trackFeatures["acousticness"];
-            trackData.features[1] = trackFeatures["danceability"];
-            trackData.features[2] = trackFeatures["energy"];
-            trackData.features[3] = trackFeatures["instrumentalness"];
-            trackData.features[4] = trackFeatures["speechiness"];
-            trackData.features[5] = trackFeatures["liveness"];
-            trackData.features[6] = trackFeatures["valence"];
-            trackData.features[7] = trackFeatures["tempo"];
+            track.features[0] = trackFeatures["acousticness"];
+            track.features[1] = trackFeatures["danceability"];
+            track.features[2] = trackFeatures["energy"];
+            track.features[3] = trackFeatures["instrumentalness"];
+            track.features[4] = trackFeatures["speechiness"];
+            track.features[5] = trackFeatures["liveness"];
+            track.features[6] = trackFeatures["valence"];
+            track.features[7] = trackFeatures["tempo"];
         }
 
         // std::cout << feature_json.dump(2) << std::endl;
@@ -166,7 +165,7 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
     }
     while(!r_json["next"].is_null());
 
-    return std::make_tuple(std::move(playlistData), std::move(coverTable));
+    return std::make_tuple(std::move(playlist), std::move(coverTable));
 }
 
 json SpotifyApiAccess::getAlbum(const std::string& albumId)
@@ -216,16 +215,11 @@ void SpotifyApiAccess::startTrackPlayback(const std::string& trackId)
     //         {"Content-Length", "0"}});
 }
 
-void SpotifyApiAccess::createPlaylist(const std::vector<std::string>& trackUris)
+void SpotifyApiAccess::createPlaylist(std::string_view name, const std::vector<std::string>& trackUris)
 {
     // create new playlist
-    const int MAXLEN = 80;
-    char s[MAXLEN] = "PlaylistFilter generated playlist - ";
-    time_t t = time(0);
-    strftime(&s[36], MAXLEN, "%d/%m/%Y::%H:%M", localtime(&t));
-
     json body_json;
-    body_json["name"] = s;
+    body_json["name"] = name;
     body_json["public"] = false;
     std::string queryUrl = "https://api.spotify.com/v1/users/" + user_id + "/playlists";
     cpr::Response r = cpr::Post(

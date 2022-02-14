@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Spotify/SpotifyApiAccess.h"
-#include "Spotify/TrackData.h"
+#include "Track/Track.h"
 #include "cpr/api.h"
 #include "cpr/response.h"
 

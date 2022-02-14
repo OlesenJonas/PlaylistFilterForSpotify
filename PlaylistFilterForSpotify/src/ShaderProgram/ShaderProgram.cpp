@@ -5,76 +5,42 @@
 
 #include "ShaderProgram.h"
 
-ShaderProgram::ShaderProgram()
-{
-}
-
-// ShaderNames must be in order Vertx, Tess_Control, Tess_Eval, Geometry,
-// Fragment, Compute
-// TODO: delete and replace in repository
-// DEPRECATED: USE FUNCTIONS WITH NAME INSTEAD
-ShaderProgram::ShaderProgram(GLuint shader_mask, const char** ShaderNames, std::initializer_list<definePair> defines, SHADER_BLEND_MODE blendmode)
-{
-    m_shaderMask = shader_mask;
-    m_defines = defines;
-    for(auto i = 0; i < __popcnt(shader_mask); i++) //# of shaders == # of bits set in mask, __popcnt name may be MSVC only (in std:: beginning c++20)
-    {
-        m_shaderPaths.emplace_back(ShaderNames[i]);
-    }
-    GenerateShaderProgram(shader_mask, m_shaderPaths);
-}
+// ShaderNames must be in order
+// Vertex, Tess_Control, Tess_Eval, Geometry, Fragment, Compute
 
 // TODO: delete and replace in repository
 // DEPRECATED: USE FUNCTIONS WITH NAME INSTEAD
 ShaderProgram::ShaderProgram(
-    GLuint shader_mask, std::initializer_list<std::string> l, std::initializer_list<definePair> defines, SHADER_BLEND_MODE blendmode)
-    : m_shaderPaths(l)
+    GLuint shader_mask, std::initializer_list<std::string> l, std::initializer_list<definePair> defines)
+    : m_shaderMask(shader_mask), m_shaderPaths(l), m_defines(defines)
 {
-    m_defines = defines;
-    m_shaderMask = shader_mask;
-    m_blendMode = blendmode;
     GenerateShaderProgram(shader_mask, m_shaderPaths);
 }
 
-ShaderProgram::ShaderProgram(
-    GLuint shader_mask, const char** ShaderNames, std::string name, std::initializer_list<definePair> defines, SHADER_BLEND_MODE blendmode)
+ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept
 {
-    this->name = name;
-    m_shaderMask = shader_mask;
-    m_defines = defines;
-    m_blendMode = blendmode;
-    for(auto i = 0; i < __popcnt(shader_mask); i++) //# of shaders == # of bits set in mask, __popcnt name may be MSVC only (in std:: beginning c++20)
-    {
-        m_shaderPaths.emplace_back(ShaderNames[i]);
-    }
-    GenerateShaderProgram(shader_mask, m_shaderPaths);
-}
-
-ShaderProgram::ShaderProgram(
-    GLuint shader_mask, std::initializer_list<std::string> l, std::string name, std::initializer_list<definePair> defines,
-    SHADER_BLEND_MODE blendmode)
-    : m_shaderPaths(l)
-{
-    this->name;
-    m_shaderMask = shader_mask;
-    m_defines = defines;
-    m_blendMode = blendmode;
-    GenerateShaderProgram(shader_mask, m_shaderPaths);
-}
-
-GLuint ShaderProgram::getProgramID()
-{
-    return (m_ProgramID);
+    modelUniformLocation = other.modelUniformLocation;
+    m_shaderMask = other.m_shaderMask;
+    m_shaderPaths = std::move(other.m_shaderPaths);
+    m_defines = std::move(m_defines);
+    // unsure which of the two to use, swapping means the old value
+    //(if it was initialized) will be glDelete'd after others scope ends
+    // which is probably desired because otherwise it may be forgotten in memory
+    //  m_ProgramID = other.m_ProgramID;
+    //  other.m_ProgramID = 0xFFFFFFFF;
+    std::swap(m_ProgramID, other.m_ProgramID);
+    return *this;
 }
 
 ShaderProgram::~ShaderProgram()
 {
     if(m_ProgramID != 0xFFFFFFFF)
         glDeleteProgram(m_ProgramID);
-    for(auto& shaderInstance : instances)
-    {
-        delete shaderInstance;
-    }
+}
+
+GLuint ShaderProgram::getProgramID()
+{
+    return (m_ProgramID);
 }
 
 void ShaderProgram::GenerateShaderProgram(GLuint shader_mask, std::vector<std::string> ShaderNames)
@@ -152,8 +118,6 @@ void ShaderProgram::GenerateShaderProgram(GLuint shader_mask, std::vector<std::s
 
     glLinkProgram(m_ProgramID);
     checkProgram(m_ProgramID);
-
-    glObjectLabel(GL_PROGRAM, m_ProgramID, std::strlen(name.c_str()), name.c_str());
 
     glUseProgram(m_ProgramID);
     modelUniformLocation = glGetUniformLocation(m_ProgramID, "model");
@@ -264,9 +228,9 @@ void ShaderProgram::loadShaderSource(GLint shaderID, const char* fileName)
     file.close();
 
     char error[256];
-    //dont need stb_include in this project
-    // char* processed = stb_include_string(fileContent.data(), "", filePath.data(), fileNameAndExt.data(), error);
-    // const char* source = processed;
+    // dont need stb_include in this project
+    //  char* processed = stb_include_string(fileContent.data(), "", filePath.data(), fileNameAndExt.data(),
+    //  error); const char* source = processed;
     const char* source = fileContent.data();
     const GLint source_size = strlen(source);
     // if(processed == nullptr)

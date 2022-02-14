@@ -7,16 +7,14 @@
 #include <string>
 #include <vector>
 
+#include "CommonStructs/CommonStructs.h"
 #include <utils/utf.h>
-
-// fwd declaration
-struct CoverInfo;
 
 // todo: test storing both versions of strings for searching vs decoding inside searching funciton when needed
 // (memory vs speed)
-struct TrackData
+struct Track
 {
-    TrackData(
+    Track(
         int idx, std::string pid, std::string ptrackNameE, std::string partistsNamesE, std::string palbumId,
         std::string palbumNameE);
     int index = -1;
@@ -36,6 +34,7 @@ struct TrackData
     // details see:
     // https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-audio-features
     static constexpr int featureAmount = 9;
+    // keep full string here because its needed for the imgui widgets, makes next part super ugly though
     static constexpr char* FeatureNamesData = "Acousticness\0Danceability\0Energy\0Instrumentalness\0Speechin"
                                               "ess\0Liveness\0Valence\0Tempo*\0Popularity\0";
     // ugly way of defining the sections, probably(?) doable with macro/template
@@ -52,4 +51,13 @@ struct TrackData
     std::array<float, featureAmount> features;
 
     CoverInfo* coverInfoPtr = nullptr;
+};
+
+struct TrackSorter
+{
+    explicit TrackSorter(int i) : index(i){};
+    bool operator()(const Track* td1, const Track* td2) const;
+
+  private:
+    int index;
 };

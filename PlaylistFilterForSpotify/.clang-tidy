@@ -2,7 +2,8 @@
 Checks:     '*,-hicpp-uppercase-literal-suffix,-readability-uppercase-literal-suffix,
             -fuchsia-*,-google-*,-zircon-*,-abseil-*,-modernize-use-trailing-return-type,-llvm-*,
             -cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-hicpp-braces-around-statements,
-            -readability-braces-around-statements,-cppcoreguidelines-owning-memory,-llvmlibc*'
+            -readability-braces-around-statements,-cppcoreguidelines-owning-memory,-llvmlibc*,-cppcoreguidelines-pro-type-vararg,
+            -hicpp-vararg,-cppcoreguidelines-pro-bounds-constant-array-index, -altera-unroll-loops'
 WarningsAsErrors: ''
 HeaderFilterRegex: '*'
 FormatStyle:     none
