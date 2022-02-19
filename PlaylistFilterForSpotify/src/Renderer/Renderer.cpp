@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "App/App.h"
+#include "imgui/imgui.h"
 
 void Renderer::rebuildBuffer()
 {
@@ -663,6 +664,8 @@ void Renderer::draw()
         if(ImGui::Begin("Playlist Data", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
             app.pinnedTracksTable.draw();
+            ImVec2 tableStart = ImGui::GetItemRectMin();
+            ImVec2 tableEnd = ImGui::GetItemRectMax();
             if(!app.pinnedTracks.empty())
             {
                 if(ImGui::Button("Create filters from pinned tracks"))
@@ -730,8 +733,8 @@ void Renderer::draw()
             {
                 app.stopPlayback();
             }
-            ImGui::SameLine();
-            if(ImGui::Button("Export filtered data to playlist"))
+            ImGui::SameLine((tableEnd.x - tableStart.x) - 100.f);
+            if(ImGui::Button("Export to playlist"))
             {
                 // todo: promt popup to ask for PL name
                 app.createPlaylist(app.filteredTracks);
