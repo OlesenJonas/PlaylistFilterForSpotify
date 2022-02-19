@@ -685,6 +685,12 @@ void Renderer::draw()
                     }
                     app.filterDirty = true;
                 }
+                ImGui::SameLine((tableEnd.x - tableStart.x) - 100.f);
+                if(ImGui::Button("Export to playlist##pins"))
+                {
+                    // todo: promt popup to ask for PL name
+                    app.createPlaylist(app.pinnedTracks);
+                }
             }
             ImGui::Separator();
             app.filteredTracksTable.draw();
