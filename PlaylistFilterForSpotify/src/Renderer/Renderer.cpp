@@ -663,39 +663,13 @@ void Renderer::draw()
 
         if(ImGui::Begin("Playlist Data", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            app.pinnedTracksTable.draw();
-            ImVec2 tableStart = ImGui::GetItemRectMin();
-            ImVec2 tableEnd = ImGui::GetItemRectMax();
-            if(!app.pinnedTracks.empty())
+            if(ImGui::Button("Stop Playback"))
             {
-                if(ImGui::Button("Create filters from pinned tracks"))
-                {
-                    // todo: app.XYZ(vector<Track*> v) that fills filter
-                    app.featureMinMaxValues.fill(
-                        glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min()));
-                    for(const auto& trackPtr : app.pinnedTracks)
-                    {
-                        for(auto indx = 0; indx < trackPtr->features.size(); indx++)
-                        {
-                            app.featureMinMaxValues[indx].x =
-                                std::min(app.featureMinMaxValues[indx].x, trackPtr->features[indx]);
-                            app.featureMinMaxValues[indx].y =
-                                std::max(app.featureMinMaxValues[indx].y, trackPtr->features[indx]);
-                        }
-                    }
-                    app.filterDirty = true;
-                }
-                ImGui::SameLine((tableEnd.x - tableStart.x) - 100.f);
-                if(ImGui::Button("Export to playlist##pins"))
-                {
-                    // todo: promt popup to ask for PL name
-                    app.createPlaylist(app.pinnedTracks);
-                }
+                app.stopPlayback();
             }
-            ImGui::Separator();
-            app.filteredTracksTable.draw();
             if(canLoadCovers)
             {
+                ImGui::SameLine();
                 if(ImGui::Button("Load Covers"))
                 {
                     canLoadCovers = false;
@@ -735,11 +709,40 @@ void Renderer::draw()
             {
                 ImGui::ProgressBar(static_cast<float>(coversLoaded) / coversTotal);
             }
-            if(ImGui::Button("Stop Playback"))
+            ImGui::Separator();
+
+            app.pinnedTracksTable.draw();
+            ImVec2 tableStart = ImGui::GetItemRectMin();
+            ImVec2 tableEnd = ImGui::GetItemRectMax();
+            if(!app.pinnedTracks.empty())
             {
-                app.stopPlayback();
+                if(ImGui::Button("Export to playlist##pins"))
+                {
+                    // todo: promt popup to ask for PL name
+                    app.createPlaylist(app.pinnedTracks);
+                }
+                ImGui::SameLine((tableEnd.x - tableStart.x) - 200.f);
+                if(ImGui::Button("Create filters from pinned tracks"))
+                {
+                    // todo: app.XYZ(vector<Track*> v) that fills filter
+                    app.featureMinMaxValues.fill(
+                        glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min()));
+                    for(const auto& trackPtr : app.pinnedTracks)
+                    {
+                        for(auto indx = 0; indx < trackPtr->features.size(); indx++)
+                        {
+                            app.featureMinMaxValues[indx].x =
+                                std::min(app.featureMinMaxValues[indx].x, trackPtr->features[indx]);
+                            app.featureMinMaxValues[indx].y =
+                                std::max(app.featureMinMaxValues[indx].y, trackPtr->features[indx]);
+                        }
+                    }
+                    app.filterDirty = true;
+                }
             }
-            ImGui::SameLine((tableEnd.x - tableStart.x) - 100.f);
+            ImGui::Separator();
+
+            app.filteredTracksTable.draw();
             if(ImGui::Button("Export to playlist"))
             {
                 // todo: promt popup to ask for PL name
