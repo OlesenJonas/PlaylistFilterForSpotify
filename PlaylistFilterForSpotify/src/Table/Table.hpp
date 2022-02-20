@@ -45,6 +45,8 @@ class Table : TableAttributes<type>
     void calcHeaderWidth();
     void sortData();
 
+    float width = 0.f;
+
   private:
     App& app;
     std::vector<Track*>& tracks;
@@ -62,20 +64,19 @@ class Table : TableAttributes<type>
         defaultColumnFlag | ImGuiTableColumnFlags_NoSort;
 
     std::vector<ColumnHeader> columnHeaders;
-    float tableWidth = 0.f;
 
     int columnToSortBy = 0;
     bool sortAscending = false;
 
-    inline ImVec2 getTableHeight()
+    inline ImVec2 getTableSize()
     {
         if constexpr(type == TableType::Pinned)
         {
-            return ImVec2(0, rowSize.y * (std::min<int>(tracks.size(), 3) + 0.7f));
+            return ImVec2(width, rowSize.y * (std::min<int>(tracks.size(), 3) + 0.7f));
         }
         else
         {
-            return ImVec2(0, rowSize.y * 14);
+            return ImVec2(width, rowSize.y * 14);
         }
     }
 };
@@ -119,19 +120,21 @@ void Table<type>::calcHeaderWidth()
     // Artist name: 18 characters
     size = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMM");
     columnHeaders[3].width = std::max(columnHeaders[2].width, size.x);
-    // could optionally limit width to some max value
-    //  float maxNameLength = 250;
-    //  columnHeaders[2].width = std::min(columnHeaders[2].width, maxNameLength);
-    //  columnHeaders[3].width = std::min(columnHeaders[3].width, maxNameLength);
-    //  Add additional padding to last column (compensate for scrollbar)
-    columnHeaders[columnHeaders.size() - 1].width += 15.f;
-    // not sure what ive used tableWidth for, but I think it can be removed by now. Dont see any other
-    // references
-    //  auto lambda = [](float f, const ColumnHeader& b) -> float
-    //  {
-    //  return f + b.width;
-    //  };
-    //  tableWidth = std::accumulate(columnHeaders.begin(), columnHeaders.end(), 0.0f, lambda);
+
+    width = ImGui::GetStyle().ChildBorderSize;
+    for(const auto& header : columnHeaders)
+    {
+        width += header.width;
+        width += 2 * ImGui::GetStyle().CellPadding.x;
+        width += ImGui::GetStyle().ChildBorderSize;
+    }
+
+    // hardcode add width for the last "empty" column (no header just contains the (un-)pin buttons)
+    //  todo: should really be part of the columnHeaders array
+    //  50.0f is the currently used hardcoded value for the columnwidth
+    width += 50.0f;
+    width += 2 * ImGui::GetStyle().CellPadding.x;
+    width += ImGui::GetStyle().ChildBorderSize;
 };
 
 template <TableType type>
@@ -161,7 +164,7 @@ void Table<type>::draw()
     {
         ImGui::Text("Total: %d", static_cast<int>(tracks.size()));
     }
-    const ImVec2 outer_size = getTableHeight();
+    const ImVec2 outer_size = getTableSize();
     if(ImGui::BeginTable(this->name, 14, flags, outer_size))
     {
         ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible

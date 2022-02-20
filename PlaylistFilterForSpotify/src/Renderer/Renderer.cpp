@@ -712,8 +712,6 @@ void Renderer::draw()
             ImGui::Separator();
 
             app.pinnedTracksTable.draw();
-            ImVec2 tableStart = ImGui::GetItemRectMin();
-            ImVec2 tableEnd = ImGui::GetItemRectMax();
             if(!app.pinnedTracks.empty())
             {
                 if(ImGui::Button("Export to playlist##pins"))
@@ -721,7 +719,7 @@ void Renderer::draw()
                     // todo: promt popup to ask for PL name
                     app.createPlaylist(app.pinnedTracks);
                 }
-                ImGui::SameLine((tableEnd.x - tableStart.x) - 200.f);
+                ImGui::SameLine(app.pinnedTracksTable.width - 189.f);
                 if(ImGui::Button("Create filters from pinned tracks"))
                 {
                     // todo: app.XYZ(vector<Track*> v) that fills filter
