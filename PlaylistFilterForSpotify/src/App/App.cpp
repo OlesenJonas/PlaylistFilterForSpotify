@@ -123,6 +123,21 @@ void App::createPlaylist(const std::vector<Track*>& tracks)
     apiAccess.createPlaylist(&s[0], uris);
 }
 
+void App::extendPinsByRecommendations()
+{
+    Track& t = *pinnedTracks[0];
+    std::vector<std::string_view> seeds{t.id};
+    apiAccess.getRecommendations(seeds);
+};
+
+//
+//
+//
+// SECTION: INPUT
+//
+//
+//
+
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));

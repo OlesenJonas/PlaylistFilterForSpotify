@@ -44,6 +44,7 @@ class App
     bool startTrackPlayback(const std::string& trackId);
     bool stopPlayback();
     void createPlaylist(const std::vector<Track*>& tracks);
+    void extendPinsByRecommendations();
 
     // todo: make private, add get and or set
 
@@ -61,6 +62,8 @@ class App
     int lastPlayedTrack = -1;
     bool filterDirty = false;
     bool graphingDirty = false;
+
+    int recommendAccuracy = 0;
 
   private:
     bool shouldClose();

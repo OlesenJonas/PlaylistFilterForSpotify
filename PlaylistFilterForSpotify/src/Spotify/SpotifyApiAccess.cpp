@@ -248,3 +248,19 @@ void SpotifyApiAccess::createPlaylist(std::string_view name, const std::vector<s
         std::cout << r.text << std::endl;
     }
 }
+
+std::vector<std::string> SpotifyApiAccess::getRecommendations(std::vector<std::string_view>& seedIds)
+{
+    assert(seedIds.size() <= 5);
+    cpr::Response r = cpr::Get(
+        cpr::Url(
+            "https://api.spotify.com/v1/recommendations?limit=100&seed_tracks=" + std::string(seedIds[0])),
+        cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
+    json r_json = json::parse(r.text);
+    for(const auto& track : r_json["tracks"])
+    {
+        std::cout << track["name"].get<std::string>() << "\n";
+    }
+    std::cout << std::endl;
+    return {};
+}

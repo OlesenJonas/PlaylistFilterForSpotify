@@ -26,9 +26,13 @@ class SpotifyApiAccess
     json getAlbum(const std::string& albumId);
 
     // todo: not void, handle errors (especially if no device found because inactive!)
+
     void startTrackPlayback(const std::string& trackUris);
     void stopPlayback();
     void createPlaylist(std::string_view name, const std::vector<std::string>& trackUris);
+
+    // Get the Ids of track recommendations based on up to 5 input track Ids
+    std::vector<std::string> getRecommendations(std::vector<std::string_view>& seedIds);
 
     // is public for now, get/set would be trivial atm
     std::string access_token;

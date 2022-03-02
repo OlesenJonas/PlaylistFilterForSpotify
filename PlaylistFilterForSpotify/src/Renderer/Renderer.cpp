@@ -719,6 +719,28 @@ void Renderer::draw()
                     // todo: promt popup to ask for PL name
                     app.createPlaylist(app.pinnedTracks);
                 }
+
+                // todo: un-hardcode these offsets (depend on text (-> button/sliders) sizes)
+                ImGui::SameLine(app.pinnedTracksTable.width - 952.f);
+                if(ImGui::Button("Recommend tracks to pin"))
+                {
+                    app.extendPinsByRecommendations();
+                }
+                ImGui::SameLine(app.pinnedTracksTable.width - 790.f);
+                ImGui::SetNextItemWidth(100);
+                ImGui::SliderInt("Accuracy", &app.recommendAccuracy, 1, 5, "");
+                ImGui::SameLine();
+                ImGui::TextDisabled("(?)");
+                if(ImGui::IsItemHovered())
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                    ImGui::TextUnformatted("Controls how accurate the recommendations will fit the pinned "
+                                           "tracks. Higher accuracy may give less results overall.");
+                    ImGui::PopTextWrapPos();
+                    ImGui::EndTooltip();
+                }
+
                 ImGui::SameLine(app.pinnedTracksTable.width - 189.f);
                 if(ImGui::Button("Create filters from pinned tracks"))
                 {
