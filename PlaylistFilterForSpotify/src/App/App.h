@@ -17,6 +17,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "Renderer/Renderer.h"
@@ -46,7 +47,7 @@ class App
     void createPlaylist(const std::vector<Track*>& tracks);
     void extendPinsByRecommendations();
 
-    // todo: make private, add get and or set
+    // todo: make private, add get and/or set
 
     std::vector<Track> playlist;
     std::vector<Track*> playlistTracks;
@@ -59,11 +60,14 @@ class App
     Table<TableType::Pinned> pinnedTracksTable;
     Table<TableType::Filtered> filteredTracksTable;
 
+    std::unordered_set<Track*> tracksToRecommend;
+    bool showRecommendations = false;
+
     int lastPlayedTrack = -1;
     bool filterDirty = false;
     bool graphingDirty = false;
 
-    int recommendAccuracy = 0;
+    int recommendAccuracy = 1;
 
   private:
     bool shouldClose();

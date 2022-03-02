@@ -1,6 +1,8 @@
 #include "App.h"
 #include "GLFW/glfw3.h"
 #include "Renderer/Renderer.h"
+#include <random>
+#include <unordered_set>
 
 App::App()
     : renderer(*this), pinnedTracksTable(*this, pinnedTracks), filteredTracksTable(*this, filteredTracks)
@@ -125,9 +127,120 @@ void App::createPlaylist(const std::vector<Track*>& tracks)
 
 void App::extendPinsByRecommendations()
 {
-    Track& t = *pinnedTracks[0];
-    std::vector<std::string_view> seeds{t.id};
-    apiAccess.getRecommendations(seeds);
+    // only recommend tracks that are part of the users playlist
+    std::unordered_map<std::string_view, Track*> playlistEntries;
+    for(Track& track : playlist)
+    {
+        playlistEntries.try_emplace(track.id, &track);
+    }
+
+    // since we can only request recommendations for up to 5 tracks at once
+    // we need to first build a list of requests that covers all pinned tracks
+    // the amount of tracks included in one request depends on the selected accuracy
+    const int requestSize = recommendAccuracy;
+    std::vector<std::vector<std::string_view>> requests;
+
+    // fill requests
+    if(requestSize == 1)
+    {
+        for(const Track* track : pinnedTracks)
+        {
+            requests.emplace_back(1);
+            auto& req = requests.back();
+            req[0] = track->id;
+        }
+    }
+    else
+    {
+        if(pinnedTracks.size() <= requestSize)
+        {
+            requests.emplace_back(pinnedTracks.size());
+            auto& req = requests.back();
+            for(int i = 0; i < pinnedTracks.size(); i++)
+            {
+                req[i] = pinnedTracks[i]->id;
+            }
+        }
+        else
+        {
+            // this is the more complicated part
+            // want to generate random subsets covering all pinned tracks
+            // some tracks may occur more often, but the goal is for each
+            // track so occur roughly the same amount of times
+            // in order to realize that the probably of selecting a track
+            // is set to the inverse of how often it has already been selected
+            std::random_device rd;
+            std::mt19937 rd_gen(rd());
+
+            std::vector<int> occurances(pinnedTracks.size());
+            std::fill(occurances.begin(), occurances.end(), 0);
+            int totalOccurances = 0;
+            std::vector<int> weights(pinnedTracks.size());
+            std::fill(weights.begin(), weights.end(), 1);
+
+            for(int i = 0; i < pinnedTracks.size(); i++)
+            {
+                if(occurances[i] > 0)
+                {
+                    continue;
+                }
+
+                requests.emplace_back(requestSize);
+                auto& request = requests.back();
+
+                request[0] = pinnedTracks[i]->id;
+
+                // unless its the first iteration, calculate the weights from the "inverse occurance"
+                if(i != 0)
+                {
+                    for(int j = 0; j < weights.size(); j++)
+                    {
+                        weights[j] = totalOccurances - occurances[j];
+                    }
+                }
+                std::discrete_distribution<> distrib(weights.begin(), weights.end());
+
+                // fill request with other requestSize-1 elements
+                for(int j = 0; j < (requestSize - 1); j++)
+                {
+                    std::string_view newElem;
+                    int indx = 0;
+                    do
+                    {
+                        indx = distrib(rd_gen);
+                        newElem = pinnedTracks[indx]->id;
+                    }
+                    // request should not contain duplicates
+                    while(std::find(request.begin(), request.end(), newElem) != request.end());
+                    request[j + 1] = newElem;
+                    occurances[indx] += 1;
+                }
+
+                totalOccurances += requestSize;
+            }
+        }
+    }
+
+    // requests are built, now retrieve recommendations from API and check against playlist
+    tracksToRecommend.clear();
+
+    for(auto& request : requests)
+    {
+        std::vector<std::string> recommendations = apiAccess.getRecommendations(request);
+        for(auto& id : recommendations)
+        {
+            // better to compare more than just ID, mb. name?
+            //(for cases where its the "same" track but in different versions / from diff albums)
+            auto res = playlistEntries.find(id);
+            if(res != playlistEntries.end())
+            {
+                // playlist does contain track
+                tracksToRecommend.insert(res->second);
+            }
+        }
+    }
+
+    showRecommendations = true;
 };
 
 //

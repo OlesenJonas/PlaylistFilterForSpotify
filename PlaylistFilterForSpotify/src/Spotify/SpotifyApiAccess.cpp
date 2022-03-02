@@ -252,15 +252,29 @@ void SpotifyApiAccess::createPlaylist(std::string_view name, const std::vector<s
 std::vector<std::string> SpotifyApiAccess::getRecommendations(std::vector<std::string_view>& seedIds)
 {
     assert(seedIds.size() <= 5);
+    std::string seedString;
+    // length of Id(22) characters per song + comma per song (excpt last)
+    seedString.reserve(seedIds.size() * 22 + (seedIds.size() - 1));
+    for(int i = 0; i < seedIds.size(); i++)
+    {
+        seedString += seedIds[i];
+        if(i != seedIds.size() - 1)
+        {
+            seedString += ",";
+        }
+    }
     cpr::Response r = cpr::Get(
-        cpr::Url(
-            "https://api.spotify.com/v1/recommendations?limit=100&seed_tracks=" + std::string(seedIds[0])),
+        cpr::Url("https://api.spotify.com/v1/recommendations?limit=100&seed_tracks=" + seedString),
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
     json r_json = json::parse(r.text);
+
+    std::vector<std::string> result = {};
+    result.reserve(r_json["tracks"].size());
     for(const auto& track : r_json["tracks"])
     {
-        std::cout << track["name"].get<std::string>() << "\n";
+        // std::cout << track["name"].get<std::string>() << "\n";
+        result.emplace_back(track["id"].get<std::string>());
     }
-    std::cout << std::endl;
-    return {};
+    // std::cout << std::endl << std::endl;
+    return result;
 }
