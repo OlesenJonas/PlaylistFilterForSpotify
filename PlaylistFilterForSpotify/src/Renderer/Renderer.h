@@ -6,26 +6,11 @@
 #include <queue>
 
 #include <GLFW/glfw3.h>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/ext.hpp>
-#include <glm/gtc/matrix_access.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
-
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-#include "imgui/imgui_internal.h"
-#include "stb_image.h"
 
 #include "Camera/Camera.h"
 #include "CommonStructs/CommonStructs.h"
 #include "ShaderProgram/ShaderProgram.h"
-#include "Spotify/SpotifyApiAccess.h"
 #include "Track/Track.h"
-#include "utils/OpenGLErrorHandler.h"
-#include "utils/imgui_extensions.h"
-#include "utils/utf.h"
 
 #define MSAA 4
 

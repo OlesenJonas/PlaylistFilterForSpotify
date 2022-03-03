@@ -4,29 +4,14 @@
 
 #include <GLFW/glfw3.h>
 
-#include <cstdio>
-#include <execution>
-#include <iterator>
-#include <limits>
-#include <memory>
-#include <mutex>
-#include <numeric>
-#include <queue>
-#include <stdexcept>
-#include <stdio.h>
-#include <string>
-#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "Renderer/Renderer.h"
-#include "ShaderProgram/ShaderProgram.h"
 #include "Spotify/SpotifyApiAccess.h"
 #include "Table/Table.hpp"
 #include "Track/Track.h"
-#include "utils/imgui_extensions.h"
-#include "utils/utf.h"
 
 // todo: move into some InputHandler class
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

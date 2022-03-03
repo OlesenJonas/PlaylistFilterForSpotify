@@ -1,6 +1,19 @@
-#include "Renderer.h"
-#include "App/App.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_internal.h"
+#include "stb_image.h"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/ext.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include "App/App.h"
+#include "Renderer.h"
+#include "utils/OpenGLErrorHandler.h"
+#include "utils/imgui_extensions.h"
 
 void Renderer::rebuildBuffer()
 {
