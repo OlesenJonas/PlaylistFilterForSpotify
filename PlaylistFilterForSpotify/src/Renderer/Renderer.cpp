@@ -825,19 +825,19 @@ void Renderer::draw()
                     {
                         ImGui::Image((void*)(intptr_t)(track->coverInfoPtr->id), ImVec2(64, 64));
                     }
+                    float maxTextSize = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMMMM").x;
                     ImGui::SetCursorPos(textStartPos);
-                    // TODO: fixed size (see spotify name width from table)
-                    ImGui::TextUnformatted(track->trackNameEncoded.c_str());
-                    ImGui::SetCursorPosX(textStartPos.x);
-                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-                    ImGui::TextUnformatted(track->albumNameEncoded.c_str());
-                    ImGui::PopStyleColor();
-                    ImGui::SetCursorPosX(textStartPos.x);
-                    ImGui::TextUnformatted(track->artistsNamesEncoded.c_str());
+                    if(ImGui::BeginChild("Names", ImVec2(maxTextSize, 64)))
+                    {
+                        ImGui::TextUnformatted(track->trackNameEncoded.c_str());
+                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
+                        ImGui::TextUnformatted(track->albumNameEncoded.c_str());
+                        ImGui::PopStyleColor();
+                        ImGui::TextUnformatted(track->artistsNamesEncoded.c_str());
+                    }
+                    ImGui::EndChild(); // Names Child
 
-                    // TODO: get this offset from max width aswell (see above)
-                    ImGui::SetCursorPosX(textStartPos.x + 150.0f);
-                    ImGui::SetCursorPosY(textStartPos.y);
+                    ImGui::SameLine();
                     if(ImGui::Button("Pin Track"))
                     {
                         app.pinTrack(track);
