@@ -222,7 +222,7 @@ void App::extendPinsByRecommendations()
     }
 
     // requests are built, now retrieve recommendations from API and check against playlist
-    tracksToRecommend.clear();
+    recommendedTracks.clear();
 
     for(auto& request : requests)
     {
@@ -235,7 +235,7 @@ void App::extendPinsByRecommendations()
             if(res != playlistEntries.end())
             {
                 // playlist does contain track
-                tracksToRecommend.insert(res->second);
+                recommendedTracks.insert(res->second);
             }
         }
     }

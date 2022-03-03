@@ -60,7 +60,7 @@ class App
     Table<TableType::Pinned> pinnedTracksTable;
     Table<TableType::Filtered> filteredTracksTable;
 
-    std::unordered_set<Track*> tracksToRecommend;
+    std::unordered_set<Track*> recommendedTracks;
     bool showRecommendations = false;
 
     int lastPlayedTrack = -1;
