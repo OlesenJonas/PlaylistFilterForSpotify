@@ -76,6 +76,7 @@ class Renderer
     bool uiHidden = false;
 
     void rebuildBuffer();
+    void highlightWindow(const std::string& name);
 
   private:
     void fillTrackBuffer(int i1, int i2, int i3);

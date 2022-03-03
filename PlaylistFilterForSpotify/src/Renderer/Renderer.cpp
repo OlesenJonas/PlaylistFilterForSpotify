@@ -23,6 +23,11 @@ void Renderer::fillTrackBuffer(int i1, int i2, int i3)
         trackVBO, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
 };
 
+void Renderer::highlightWindow(const std::string& name)
+{
+    ImGui::SetWindowFocus(name.c_str());
+}
+
 Renderer::Renderer(App& a) : app(a)
 {
 }
@@ -768,7 +773,67 @@ void Renderer::draw()
                 // todo: promt popup to ask for PL name
                 app.createPlaylist(app.filteredTracks);
             }
-            ImGui::End();
+        }
+        ImGui::End(); // Playlist Data Window
+
+        if(app.showRecommendations)
+        {
+            ImGui::SetNextWindowSize(ImVec2(0, 0));
+            ImGui::SetNextWindowSizeConstraints(ImVec2(-1, 0), ImVec2(-1, 500)); // Vertical only
+            if(ImGui::Begin(
+                   "Pin Recommendations", &app.showRecommendations, ImGuiWindowFlags_NoSavedSettings))
+            {
+                if(app.recommendedTracks.empty())
+                {
+                    ImGui::TextUnformatted("No recommendations found :(");
+                }
+                int id = -1;
+                for(const auto& track : app.recommendedTracks)
+                {
+                    id++;
+                    ImGui::PushID(id);
+                    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+                    if(ImGui::InvisibleButton("hiddenButtonRecommended", ImVec2(64, 64)))
+                    {
+                        app.startTrackPlayback(track->id);
+                    }
+                    ImVec2 afterImagePos = ImGui::GetCursorPos();
+                    ImGui::SameLine();
+                    ImVec2 textStartPos = ImGui::GetCursorPos();
+                    ImGui::SetCursorScreenPos(ImVec2(cursorPos.x, cursorPos.y));
+                    if(ImGui::IsItemHovered())
+                    {
+                        ImVec2 textSize = ImGui::CalcTextSize(u8"▶");
+                        ImGui::SetCursorScreenPos(ImVec2(
+                            cursorPos.x + (64 - textSize.x) * 0.5f, cursorPos.y + (64 - textSize.y) * 0.5f));
+                        ImGui::Text(u8"▶");
+                    }
+                    else
+                    {
+                        ImGui::Image((void*)(intptr_t)(track->coverInfoPtr->id), ImVec2(64, 64));
+                    }
+                    ImGui::SetCursorPos(textStartPos);
+                    // TODO: fixed size (see spotify name width from table)
+                    ImGui::TextUnformatted(track->trackNameEncoded.c_str());
+                    ImGui::SetCursorPosX(textStartPos.x);
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
+                    ImGui::TextUnformatted(track->albumNameEncoded.c_str());
+                    ImGui::PopStyleColor();
+                    ImGui::SetCursorPosX(textStartPos.x);
+                    ImGui::TextUnformatted(track->artistsNamesEncoded.c_str());
+
+                    // TODO: get this offset from max width aswell (see above)
+                    ImGui::SetCursorPosX(textStartPos.x + 150.0f);
+                    ImGui::SetCursorPosY(textStartPos.y);
+                    if(ImGui::Button("Pin Track"))
+                    {
+                        app.pinTrack(track);
+                    }
+                    ImGui::PopID();
+                    ImGui::SetCursorPos(afterImagePos);
+                }
+            }
+            ImGui::End(); // Pin Recommendations Window
         }
     }
     // Create ImGui Render Data

@@ -241,6 +241,7 @@ void App::extendPinsByRecommendations()
     }
 
     showRecommendations = true;
+    renderer.highlightWindow("Pin Recommendations");
 };
 
 //
