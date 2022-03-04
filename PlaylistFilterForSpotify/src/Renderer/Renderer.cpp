@@ -74,7 +74,7 @@ void Renderer::init()
     // init opengl
     if(!gladLoadGL())
     {
-        printf("Something went wrong!\n");
+        printf("Something went wrong loading OpenGL!\n");
         exit(-1);
     }
 
@@ -801,8 +801,9 @@ void Renderer::draw()
                     ImGui::TextUnformatted("No recommendations found :(");
                 }
                 int id = -1;
-                for(const auto& track : app.recommendedTracks)
+                for(const auto& recommendation : app.recommendedTracks)
                 {
+                    const auto& track = recommendation.track;
                     id++;
                     ImGui::PushID(id);
                     ImVec2 cursorPos = ImGui::GetCursorScreenPos();

@@ -6,6 +6,8 @@
 #include <glm/ext.hpp>
 #include <string>
 
+struct Track;
+
 struct TrackBufferElement
 {
     // position of track
@@ -42,4 +44,26 @@ enum TableType
 {
     Pinned,
     Filtered
+};
+
+struct Recommendation
+{
+    Track* track = nullptr;
+    mutable uint8_t occurances = 1;
+
+    inline bool operator==(const Recommendation& rhs) const
+    {
+        return track == rhs.track;
+    }
+    inline bool operator<(const Recommendation& rhs) const
+    {
+        return occurances < rhs.occurances;
+    }
+};
+struct RecommendationHash
+{
+    std::size_t operator()(const Recommendation& r) const
+    {
+        return std::hash<Track*>{}(r.track);
+    }
 };

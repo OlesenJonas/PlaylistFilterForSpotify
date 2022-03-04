@@ -222,7 +222,8 @@ void App::extendPinsByRecommendations()
     }
 
     // requests are built, now retrieve recommendations from API and check against playlist
-    recommendedTracks.clear();
+
+    std::unordered_set<Recommendation, RecommendationHash> tracksToRecommend;
 
     for(auto& request : requests)
     {
@@ -231,15 +232,23 @@ void App::extendPinsByRecommendations()
         {
             // better to compare more than just ID, mb. name?
             //(for cases where its the "same" track but in different versions / from diff albums)
-            auto res = playlistEntries.find(id);
-            if(res != playlistEntries.end())
+            auto found = playlistEntries.find(id);
+            if(found != playlistEntries.end())
             {
                 // playlist does contain track
-                recommendedTracks.insert(res->second);
+                auto insertion = tracksToRecommend.insert({.track = found->second});
+                // increase occurance counter if no insertion happended
+                if(!insertion.second)
+                {
+                    insertion.first->occurances += 1;
+                }
             }
         }
     }
 
+    recommendedTracks.assign(tracksToRecommend.begin(), tracksToRecommend.end());
+    // note sort with reverse iterators, high occurances should be at front of vector
+    std::sort(recommendedTracks.rbegin(), recommendedTracks.rend());
     showRecommendations = true;
     renderer.highlightWindow("Pin Recommendations");
 };
