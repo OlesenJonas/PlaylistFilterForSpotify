@@ -176,7 +176,6 @@ void ShaderProgram::checkProgram(GLuint programID)
     }
 }
 
-// reads a file and returns the content as a pointer to chars
 void ShaderProgram::loadShaderSource(GLint shaderID, const char* fileName)
 {
     // try to open file
@@ -218,7 +217,7 @@ void ShaderProgram::loadShaderSource(GLint shaderID, const char* fileName)
         fileContent += "#define " + definePair.first + " " + definePair.second + "\n";
     }
 
-    fileContent += "#line " + std::to_string(lineNumber) + " " + fileNameAndExt + "\n";
+    fileContent += "#line " + std::to_string(lineNumber);
 
     while(!file.eof())
     {
@@ -227,23 +226,12 @@ void ShaderProgram::loadShaderSource(GLint shaderID, const char* fileName)
     }
     file.close();
 
-    char error[256];
-    // dont need stb_include in this project
-    //  char* processed = stb_include_string(fileContent.data(), "", filePath.data(), fileNameAndExt.data(),
-    //  error); const char* source = processed;
     const char* source = fileContent.data();
     const GLint source_size = strlen(source);
-    // if(processed == nullptr)
-    // {
-    //     std::cerr << "Error: Parsing File " << fileName << "\n";
-    //     std::cerr << error << std::endl;
-    // }
 
     std::cout << "SUCCESS: Opened file " << fileName << std::endl;
 
     glShaderSource(shaderID, 1, &source, &source_size);
-
-    // free(processed);
 }
 
 // TODO: optimally should not use these functions since its calling glGetUniformLocation everytime
