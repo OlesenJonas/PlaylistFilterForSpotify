@@ -546,7 +546,7 @@ void Renderer::draw()
         IMGUI_ACTIVATE(ImGui::Combo("Y Axis Value", &graphingFeature2, comboNames), app.graphingDirty);
         IMGUI_ACTIVATE(ImGui::Combo("Z Axis Value", &graphingFeature3, comboNames), app.graphingDirty);
         ImGui::Separator();
-        ImGui::TextUnformatted("Filter Dataset:");
+        ImGui::TextUnformatted("Filter Playlist:");
         ImGui::Text("Track or Artist name");
         if(ImGui::InputText("##filterInput", app.stringFilterBuffer.data(), app.stringFilterBuffer.size()))
         {
