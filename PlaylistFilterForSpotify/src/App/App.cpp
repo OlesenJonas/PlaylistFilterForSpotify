@@ -233,9 +233,11 @@ void App::extendPinsByRecommendations()
             // better to compare more than just ID, mb. name?
             //(for cases where its the "same" track but in different versions / from diff albums)
             auto found = playlistEntries.find(id);
-            if(found != playlistEntries.end())
+            if((found != playlistEntries.end()) &&
+               (std::find(pinnedTracks.begin(), pinnedTracks.end(), found->second) == pinnedTracks.end()))
             {
                 // playlist does contain track
+
                 auto insertion = tracksToRecommend.insert({.track = found->second});
                 // increase occurance counter if no insertion happended
                 if(!insertion.second)
