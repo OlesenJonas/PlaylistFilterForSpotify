@@ -71,6 +71,9 @@ void Renderer::init()
     glfwSetWindowUserPointer(window, reinterpret_cast<void*>(this));
     cam.setAspect(static_cast<float>(width) / static_cast<float>(height));
 
+    glfwGetWindowContentScale(window, &dpiScale, nullptr);
+    FONT_SIZE = static_cast<float>(FONT_SIZE) * dpiScale;
+
     // init opengl
     if(!gladLoadGL())
     {
@@ -95,8 +98,10 @@ void Renderer::init()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    ImGui::GetStyle().ScaleAllSizes(dpiScale);
 
-    ImFont* defaultFont = io.Fonts->AddFontFromFileTTF("C:/WINDOWS/Fonts/verdana.ttf", FONT_SIZE, NULL, NULL);
+    ImFont* defaultFont =
+        io.Fonts->AddFontFromFileTTF("C:/WINDOWS/Fonts/verdana.ttf", FONT_SIZE, nullptr, nullptr);
 
     // need a font that supports all requested special symbols:
     // list of fonts supporting a symbol can be found here:

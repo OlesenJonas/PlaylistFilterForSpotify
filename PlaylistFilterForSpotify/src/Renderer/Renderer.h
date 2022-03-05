@@ -68,6 +68,8 @@ class Renderer
 
     double last_frame;
 
+    float dpiScale = 1.0f;
+
     GLuint coverArrayHandle;
     GLuint coverArrayFreeIndex = 1;
     bool canLoadCovers = true;
