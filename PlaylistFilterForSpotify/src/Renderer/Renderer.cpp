@@ -111,11 +111,8 @@ void Renderer::init()
     // merge font instead of loading as seperate, saves Push/PopFont() calls
     ImFontConfig unicodeFontConfig;
     unicodeFontConfig.MergeMode = true;
-    // todo:
-    //  not sure what to do here, maybe find freely availiable font that supports the glyphs and package with
-    //  program
     ImFont* unicodeFont = io.Fonts->AddFontFromFileTTF(
-        "C:/WINDOWS/Fonts/DEJAVUSANS.ttf", FONT_SIZE, &unicodeFontConfig, unicodeRanges.Data);
+        MISC_PATH "/DejaVuSans.ttf", FONT_SIZE, &unicodeFontConfig, unicodeRanges.Data);
     io.Fonts->Build();
 
     ImGui::StyleColorsDark();
