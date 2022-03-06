@@ -255,6 +255,11 @@ void App::extendPinsByRecommendations()
     renderer.highlightWindow("Pin Recommendations");
 };
 
+const Renderer& App::getRenderer()
+{
+    return renderer;
+};
+
 //
 //
 //

@@ -513,16 +513,16 @@ void Renderer::draw()
     ImGui::Begin("bgWindow", nullptr, bgWindowFlags);
     {
         float fpsTextHeight = ImGui::GetTextLineHeightWithSpacing();
-        ImGui::SetCursorScreenPos(ImVec2(5, height - fpsTextHeight - 5));
-        // ImGui::TextUnformatted(fpsTextBuffer.data());
+        ImGui::SetCursorScreenPos(
+            ImVec2(scaleByDPI<float>(5), height - fpsTextHeight - scaleByDPI<float>(5)));
         ImGui::Text(
             "Application average %.3f ms/frame (%.1f FPS)",
             1000.0f / ImGui::GetIO().Framerate,
             ImGui::GetIO().Framerate);
 
         const ImVec2 textSize = ImGui::CalcTextSize("All data provided by");
-        const ImVec2 padding(5.f, 10.f);
-        const ImVec2 logoSize = {100, 100 * logoAspect};
+        const ImVec2 padding(scaleByDPI(5.f), scaleByDPI(10.f));
+        const ImVec2 logoSize = {scaleByDPI(100.0f), scaleByDPI(100.0f * logoAspect)};
         const ImVec2 start{width - padding.x, height - padding.y};
         ImGui::SetCursorScreenPos({start.x - logoSize.x, start.y - logoSize.y});
         ImGui::Image((void*)(intptr_t)(spotifyLogoHandle), logoSize);
@@ -562,12 +562,13 @@ void Renderer::draw()
         }
         for(auto i = 0; i < Track::featureAmount; i++)
         {
+            ImGui::PushID(i);
             float max = i != 7 ? 1.0f : 300.0f;
             float speed = i != 7 ? 0.001f : 1.0f;
             ImGui::TextUnformatted(Track::FeatureNames[i].data());
             IMGUI_ACTIVATE(
                 ImGui::DragFloatRange2(
-                    ("Min/Max##Feature" + std::to_string(i)).c_str(),
+                    "Min/Max",
                     &app.featureMinMaxValues[i].x,
                     &app.featureMinMaxValues[i].y,
                     speed,
@@ -575,11 +576,12 @@ void Renderer::draw()
                     max),
                 app.filterDirty);
             ImGui::SameLine();
-            if(ImGui::Button((u8"↺##Feature" + std::to_string(i)).c_str()))
+            if(ImGui::Button(u8"↺"))
             {
                 app.featureMinMaxValues[i] = {0.f, max};
                 app.filterDirty = true;
             }
+            ImGui::PopID();
         }
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
         ImGui::Separator();
@@ -590,7 +592,8 @@ void Renderer::draw()
         {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
             ImVec2 cursorPos = ImGui::GetCursorScreenPos();
-            if(ImGui::InvisibleButton("hiddenButtonSelected", ImVec2(64, 64)))
+            const float coverSize = scaleByDPI(64.0f);
+            if(ImGui::InvisibleButton("hiddenButtonSelected", ImVec2(coverSize, coverSize)))
             {
                 app.startTrackPlayback(selectedTrack->id);
             }
@@ -601,15 +604,18 @@ void Renderer::draw()
             if(ImGui::IsItemHovered())
             {
                 ImVec2 textSize = ImGui::CalcTextSize(u8"▶");
-                ImGui::SetCursorScreenPos(
-                    ImVec2(cursorPos.x + (64 - textSize.x) * 0.5f, cursorPos.y + (64 - textSize.y) * 0.5f));
+                ImGui::SetCursorScreenPos(ImVec2(
+                    cursorPos.x + (coverSize - textSize.x) * 0.5f,
+                    cursorPos.y + (coverSize - textSize.y) * 0.5f));
                 ImGui::Text(u8"▶");
             }
             else
             {
-                ImGui::Image((void*)(intptr_t)(selectedTrack->coverInfoPtr->id), ImVec2(64, 64));
+                ImGui::Image(
+                    (void*)(intptr_t)(selectedTrack->coverInfoPtr->id), ImVec2(coverSize, coverSize));
             }
-            // ImGui::SetCursorScreenPos(textStartPos);
+            // todo: look at recommendation rendering code, can simplify the layout of this
+            //  ImGui::SetCursorScreenPos(textStartPos);
             ImGui::SetCursorPos(textStartPos);
             // ImGui::TextUnformatted(selectedTrack->trackNameEncoded.c_str());
             ImGui::TextWrapped(selectedTrack->trackNameEncoded.c_str());
@@ -623,7 +629,7 @@ void Renderer::draw()
             ImGui::TextWrapped(selectedTrack->artistsNamesEncoded.c_str());
 
             ImGui::SetCursorPos(afterImagePos);
-            ImGui::SetNextItemWidth(64);
+            ImGui::SetNextItemWidth(coverSize);
             if(ImGui::Button("Pin Track"))
             {
                 app.pinTrack(selectedTrack);
@@ -741,13 +747,13 @@ void Renderer::draw()
                 }
 
                 // todo: un-hardcode these offsets (depend on text (-> button/sliders) sizes)
-                ImGui::SameLine(app.pinnedTracksTable.width - 952.f);
+                ImGui::SameLine(app.pinnedTracksTable.width - scaleByDPI(952.f));
                 if(ImGui::Button("Recommend tracks to pin"))
                 {
                     app.extendPinsByRecommendations();
                 }
-                ImGui::SameLine(app.pinnedTracksTable.width - 790.f);
-                ImGui::SetNextItemWidth(100);
+                ImGui::SameLine(app.pinnedTracksTable.width - scaleByDPI(790.f));
+                ImGui::SetNextItemWidth(scaleByDPI(100.0f));
                 ImGui::SliderInt("Accuracy", &app.recommendAccuracy, 1, 5, "");
                 ImGui::SameLine();
                 ImGui::TextDisabled("(?)");
@@ -761,7 +767,7 @@ void Renderer::draw()
                     ImGui::EndTooltip();
                 }
 
-                ImGui::SameLine(app.pinnedTracksTable.width - 189.f);
+                ImGui::SameLine(app.pinnedTracksTable.width - scaleByDPI(189.f));
                 if(ImGui::Button("Create filters from pinned tracks"))
                 {
                     // todo: app.XYZ(vector<Track*> v) that fills filter
@@ -794,7 +800,8 @@ void Renderer::draw()
         if(app.showRecommendations)
         {
             ImGui::SetNextWindowSize(ImVec2(0, 0));
-            ImGui::SetNextWindowSizeConstraints(ImVec2(-1, 0), ImVec2(-1, 500)); // Vertical only
+            ImGui::SetNextWindowSizeConstraints(
+                ImVec2(-1, 0), ImVec2(-1, scaleByDPI(500.0f))); // Vertical only
             if(ImGui::Begin(
                    "Pin Recommendations", &app.showRecommendations, ImGuiWindowFlags_NoSavedSettings))
             {
@@ -805,11 +812,12 @@ void Renderer::draw()
                 int id = -1;
                 for(const auto& recommendation : app.recommendedTracks)
                 {
+                    const float coverSize = scaleByDPI(64.0f);
                     const auto& track = recommendation.track;
                     id++;
                     ImGui::PushID(id);
                     ImVec2 cursorPos = ImGui::GetCursorScreenPos();
-                    if(ImGui::InvisibleButton("hiddenButtonRecommended", ImVec2(64, 64)))
+                    if(ImGui::InvisibleButton("hiddenButtonRecommended", ImVec2(coverSize, coverSize)))
                     {
                         app.startTrackPlayback(track->id);
                     }
@@ -821,16 +829,18 @@ void Renderer::draw()
                     {
                         ImVec2 textSize = ImGui::CalcTextSize(u8"▶");
                         ImGui::SetCursorScreenPos(ImVec2(
-                            cursorPos.x + (64 - textSize.x) * 0.5f, cursorPos.y + (64 - textSize.y) * 0.5f));
+                            cursorPos.x + (coverSize - textSize.x) * 0.5f,
+                            cursorPos.y + (coverSize - textSize.y) * 0.5f));
                         ImGui::Text(u8"▶");
                     }
                     else
                     {
-                        ImGui::Image((void*)(intptr_t)(track->coverInfoPtr->id), ImVec2(64, 64));
+                        ImGui::Image(
+                            (void*)(intptr_t)(track->coverInfoPtr->id), ImVec2(coverSize, coverSize));
                     }
                     float maxTextSize = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMMMM").x;
                     ImGui::SetCursorPos(textStartPos);
-                    if(ImGui::BeginChild("Names", ImVec2(maxTextSize, 64)))
+                    if(ImGui::BeginChild("Names", ImVec2(maxTextSize, coverSize)))
                     {
                         ImGui::TextUnformatted(track->trackNameEncoded.c_str());
                         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
