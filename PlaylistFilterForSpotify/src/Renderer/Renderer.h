@@ -31,7 +31,17 @@ class Renderer
     Renderer& operator=(Renderer&& other) = delete; // move assign
     ~Renderer();
     void init();
+
     void draw();
+
+    void rebuildBuffer();
+    void highlightWindow(const std::string& name);
+
+    template <typename T>
+    inline T scaleByDPI(T in) const
+    {
+        return in * dpiScale;
+    }
 
     // todo: make private
     // Window Settings
@@ -60,13 +70,12 @@ class Renderer
     int debugLinesPointBufferSize = 0;
     bool uiHidden = false;
 
-    void rebuildBuffer();
-    void highlightWindow(const std::string& name);
-
   private:
     void fillTrackBuffer(int i1, int i2, int i3);
 
     double last_frame;
+
+    float dpiScale = 1.0f;
 
     GLuint coverArrayHandle;
     GLuint coverArrayFreeIndex = 1;

@@ -51,8 +51,8 @@ class Table : TableAttributes<type>
     App& app;
     std::vector<Track*>& tracks;
 
-    const float coverSize = 40.0f;
-    const ImVec2 rowSize{0.0f, coverSize};
+    float coverSize = 40.0f;
+    ImVec2 rowSize{0.0f, coverSize};
 
     static constexpr ImGuiTableFlags flags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg |
                                              ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV |
@@ -86,22 +86,26 @@ class Table : TableAttributes<type>
 template <TableType type>
 Table<type>::Table(App& p_app, std::vector<Track*>& p_tracks) : app(p_app), tracks(p_tracks)
 {
-    columnHeaders = {
-        {"#", defaultColumnFlag, 40.f},
-        {"", noSortColumnFlag, 40.f},
-        {"Name", noSortColumnFlag, 60.f},
-        {"Artist(s)", noSortColumnFlag, 60.f}};
-    for(const std::string_view& name : Track::FeatureNames)
-    {
-        columnHeaders.push_back({name.data(), defaultColumnFlag, 60.0f});
-    }
 }
 
 // todo: move into constructor once the renderer constructor works correctly
 template <TableType type>
 void Table<type>::calcHeaderWidth()
 {
-    const int pad = 10;
+    const Renderer& renderer = app.getRenderer();
+    coverSize = renderer.scaleByDPI(coverSize);
+    rowSize = {0.0f, coverSize};
+
+    columnHeaders = {
+        {"#", defaultColumnFlag, coverSize},
+        {"", noSortColumnFlag, coverSize},
+        {"Name", noSortColumnFlag, 0},
+        {"Artist(s)", noSortColumnFlag, 0}};
+    for(const std::string_view& name : Track::FeatureNames)
+    {
+        columnHeaders.push_back({name.data(), defaultColumnFlag, 0});
+    }
+    const int pad = app.getRenderer().scaleByDPI(10.0f);
     for(auto i = 4; i < columnHeaders.size(); i++)
     {
         // For the audio features we can assume that the header will be wieder than any value
@@ -111,10 +115,8 @@ void Table<type>::calcHeaderWidth()
     // spotify gives some guidelines for length of names etc:
     // https://developer.spotify.com/documentation/general/design-and-branding/
     ImVec2 size;
-    // Track name: 23 characters
-    size = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMM");
-    columnHeaders[2].width = std::max(columnHeaders[2].width, size.x);
-    // Playlist/album name: 25 characters
+    // Track name: 23 characters, Playlist/Album name: 25 characters
+    // currently combined into one field, so use longer one
     size = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMMMM");
     columnHeaders[2].width = std::max(columnHeaders[2].width, size.x);
     // Artist name: 18 characters
@@ -132,7 +134,7 @@ void Table<type>::calcHeaderWidth()
     // hardcode add width for the last "empty" column (no header just contains the (un-)pin buttons)
     //  todo: should really be part of the columnHeaders array
     //  50.0f is the currently used hardcoded value for the columnwidth
-    width += 50.0f;
+    width += renderer.scaleByDPI(50.0f);
     width += 2 * ImGui::GetStyle().CellPadding.x;
     width += ImGui::GetStyle().ChildBorderSize;
 };
@@ -172,7 +174,7 @@ void Table<type>::draw()
         {
             ImGui::TableSetupColumn(header.name.c_str(), header.flags, header.width);
         }
-        ImGui::TableSetupColumn(this->lastColumnId, noSortColumnFlag, 50.f);
+        ImGui::TableSetupColumn(this->lastColumnId, noSortColumnFlag, app.getRenderer().scaleByDPI(50.f));
         ImGui::TableHeadersRow();
 
         // Sort our data if sort specs have been changed!

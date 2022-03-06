@@ -32,6 +32,8 @@ class App
     void createPlaylist(const std::vector<Track*>& tracks);
     void extendPinsByRecommendations();
 
+    const Renderer& getRenderer();
+
     // todo: make private, add get and/or set
 
     std::vector<Track> playlist;
