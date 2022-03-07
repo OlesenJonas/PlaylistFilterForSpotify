@@ -12,7 +12,7 @@ App::App()
     const std::string playlist_test_id = "4yDYkPpEix7s5HK5ZBd7lz"; // art pop
     // const std::string playlist_test_id = "0xmNlq3D0z3Dxkt0T0mqyj"; // liked
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in lambda
-    // switch back if lambda refactored into function
+    // can switch back if lambda refactored into function
     std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlist_test_id);
     // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlist_test_id);
 

@@ -48,7 +48,7 @@ Renderer::Renderer(App& a) : app(a)
 // todo: check if already initialized
 void Renderer::init()
 {
-    // initliaze window values
+    // initialize window values
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
