@@ -30,10 +30,10 @@ class Renderer
     Renderer(Renderer&&) = delete;                  // move constr
     Renderer& operator=(Renderer&& other) = delete; // move assign
     ~Renderer();
+
     void init();
-
     void draw();
-
+    void buildRenderData();
     void rebuildBuffer();
     void highlightWindow(const std::string& name);
 
@@ -80,8 +80,6 @@ class Renderer
     GLuint coverArrayHandle;
     GLuint coverArrayFreeIndex = 1;
     bool canLoadCovers = true;
-    // todo: generalize to any progress bar, have just progressCurrent & progressMax values with additional
-    // bool: inProgress or smth
     int coversTotal;
     int coversLoaded;
     std::mutex coverLoadQueueMutex;

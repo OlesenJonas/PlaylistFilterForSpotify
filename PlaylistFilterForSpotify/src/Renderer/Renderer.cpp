@@ -15,6 +15,72 @@
 #include "utils/OpenGLErrorHandler.h"
 #include "utils/imgui_extensions.h"
 
+Renderer::Renderer(App& a) : app(a)
+{
+}
+
+Renderer::~Renderer()
+{
+    glDeleteTextures(1, &coverArrayHandle);
+    // todo: probably more stuff that i forgot to delete here (eg all buffers)
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
+void Renderer::buildRenderData()
+{
+    unsigned char* data = nullptr;
+
+    // init covers array & load placeholder Album cover
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &coverArrayHandle);
+    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureStorage3D(coverArrayHandle, 3, GL_RGB8, 64, 64, app.coverTable.size() + 1);
+    // Load data of placeholder texture
+    {
+        int x, y, components;
+        data = stbi_load(MISC_PATH "/albumPlaceholder.jpg", &x, &y, &components, 3);
+        // Load into first layer of array
+        glTextureSubImage3D(coverArrayHandle, 0, 0, 0, 0, 64, 64, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
+    }
+    glGenerateTextureMipmap(coverArrayHandle);
+    // create image view to handle layer as indiv texture
+    GLuint defaultCoverHandle;
+    glGenTextures(1, &defaultCoverHandle);
+    glTextureView(defaultCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, 0, 1);
+
+    stbi_image_free(data);
+
+    CoverInfo defaultInfo = {.url = "", .layer = 0, .id = defaultCoverHandle};
+    app.coverTable[""] = defaultInfo;
+
+    for(auto& entry : app.coverTable)
+    {
+        entry.second.id = defaultCoverHandle;
+    }
+
+    coversTotal = app.coverTable.size() - 1;
+    coversLoaded = coversTotal;
+
+    glGenVertexArrays(1, &trackVAO);
+    glBindVertexArray(trackVAO);
+    glGenBuffers(1, &trackVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, trackVBO);
+    trackBuffer.reserve(app.filteredTracks.size());
+    fillTrackBuffer(0, 1, 2);
+    glBufferData(
+        GL_ARRAY_BUFFER, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TrackBufferElement), nullptr);
+    glEnableVertexAttribArray(1);
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(TrackBufferElement), (void*)(3 * sizeof(float)));
+}
+
 void Renderer::rebuildBuffer()
 {
     fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
@@ -41,10 +107,6 @@ void Renderer::highlightWindow(const std::string& name)
     ImGui::SetWindowFocus(name.c_str());
 }
 
-Renderer::Renderer(App& a) : app(a)
-{
-}
-
 // todo: check if already initialized
 void Renderer::init()
 {
@@ -53,9 +115,7 @@ void Renderer::init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#if MSAA > 0
     glfwWindowHint(GLFW_SAMPLES, MSAA);
-#endif
 #ifdef OPENGL_DEBUG_CONTEXT
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
@@ -181,11 +241,11 @@ void Renderer::init()
     const float subdiv = 10;
     for(int i = 0; i <= (int)subdiv; i++)
     {
-        gridPoints.emplace_back(2 * i / subdiv - 1, 0.f, -1.f);
-        gridPoints.emplace_back(2 * i / subdiv - 1, 0.f, 1.f);
+        gridPoints.emplace_back(2.0f * i / subdiv - 1, 0.f, -1.f);
+        gridPoints.emplace_back(2.0f * i / subdiv - 1, 0.f, 1.f);
 
-        gridPoints.emplace_back(-1.0f, 0.f, 2 * i / subdiv - 1);
-        gridPoints.emplace_back(1.0f, 0.f, 2 * i / subdiv - 1);
+        gridPoints.emplace_back(-1.0f, 0.f, 2.0f * i / subdiv - 1);
+        gridPoints.emplace_back(1.0f, 0.f, 2.0f * i / subdiv - 1);
     }
     glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
     glBufferData(
@@ -238,50 +298,6 @@ void Renderer::init()
 
     stbi_image_free(data);
 
-    // init covers array & load placeholder Album cover
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &coverArrayHandle);
-    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureStorage3D(coverArrayHandle, 3, GL_RGB8, 64, 64, app.coverTable.size() + 1);
-    // Load data of placeholder texture
-    {
-        int x, y, components;
-        data = stbi_load(MISC_PATH "/albumPlaceholder.jpg", &x, &y, &components, 3);
-        // Load into first layer of array
-        glTextureSubImage3D(coverArrayHandle, 0, 0, 0, 0, 64, 64, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
-    }
-    glGenerateTextureMipmap(coverArrayHandle);
-    // create image view to handle layer as indiv texture
-    GLuint defaultCoverHandle;
-    glGenTextures(1, &defaultCoverHandle);
-    glTextureView(defaultCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, 0, 1);
-
-    stbi_image_free(data);
-
-    CoverInfo defaultInfo = {.url = "", .layer = 0, .id = defaultCoverHandle};
-    app.coverTable[""] = defaultInfo;
-
-    for(auto& entry : app.coverTable)
-    {
-        entry.second.id = defaultCoverHandle;
-    }
-
-    coversTotal = app.coverTable.size() - 1;
-    coversLoaded = coversTotal;
-
-    glGenVertexArrays(1, &trackVAO);
-    glBindVertexArray(trackVAO);
-    glGenBuffers(1, &trackVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, trackVBO);
-    trackBuffer.reserve(app.filteredTracks.size());
-    fillTrackBuffer(0, 1, 2);
-    glBufferData(
-        GL_ARRAY_BUFFER, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TrackBufferElement), nullptr);
-    glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(TrackBufferElement), (void*)(3 * sizeof(float)));
-
     // set time to 0 before renderloop
     last_frame = 0.0;
     glfwSetTime(0.0);
@@ -294,19 +310,6 @@ void Renderer::init()
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
-}
-
-Renderer::~Renderer()
-{
-    glDeleteTextures(1, &coverArrayHandle);
-    // todo: probably more stuff that i forgot to delete here
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
 }
 
 void Renderer::draw()

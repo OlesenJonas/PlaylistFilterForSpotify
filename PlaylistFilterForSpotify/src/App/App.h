@@ -22,6 +22,7 @@ void resizeCallback(GLFWwindow* window, int w, int h);
 class App
 {
   public:
+    static enum State { LOG_IN, PL_SELECT, MAIN };
     App();
     ~App();
 
@@ -55,6 +56,8 @@ class App
     bool graphingDirty = false;
 
     int recommendAccuracy = 1;
+
+    State state = LOG_IN;
 
   private:
     bool shouldClose();

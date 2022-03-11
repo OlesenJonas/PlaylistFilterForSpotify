@@ -89,6 +89,7 @@ Table<type>::Table(App& p_app, std::vector<Track*>& p_tracks) : app(p_app), trac
 }
 
 // todo: move into constructor once the renderer constructor works correctly
+// exist yet, move after refactored
 template <TableType type>
 void Table<type>::calcHeaderWidth()
 {

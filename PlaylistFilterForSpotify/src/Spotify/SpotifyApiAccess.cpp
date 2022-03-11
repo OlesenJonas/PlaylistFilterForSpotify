@@ -103,19 +103,18 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
                 iteration * requestCountLimit + j, id, trackNameE, artistsNamesE, albumId, albumNameE);
             track.features[8] = track_json["popularity"].get<int>() / 100.f;
 
+            auto lastElement = [](const nlohmann::basic_json<>& json) -> const auto&
+            {
+                return (*(--json.end()));
+            };
             // create and/or link to album table
             auto it = coverTable.find(albumId);
             if(it == coverTable.end())
             {
                 // not found, construct and set pointer
-                // may need to pass defaultCoverHandle to function if setting outside doesnt work
-                auto lastElement = [](const nlohmann::basic_json<>& json) -> const auto&
-                {
-                    return (*(--json.end()));
-                };
                 const std::string& coverUrl =
                     lastElement(track_json["album"]["images"])["url"].get<std::string>();
-                CoverInfo info{.url = coverUrl, .layer = 0, .id = 420};
+                CoverInfo info{.url = coverUrl, .layer = 0, .id = 0xFFFFFFFFu};
                 auto newEntry = coverTable.emplace(albumId, info);
                 track.coverInfoPtr = &(newEntry.first->second);
             }
