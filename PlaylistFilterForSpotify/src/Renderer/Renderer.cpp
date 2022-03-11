@@ -309,7 +309,15 @@ void Renderer::highlightWindow(const std::string& name)
     ImGui::SetWindowFocus(name.c_str());
 }
 
-void Renderer::draw()
+void Renderer::drawLogIn()
+{
+}
+
+void Renderer::drawPLSelect()
+{
+}
+
+void Renderer::drawMain()
 {
     glfwPollEvents();
     // start imgui frame

@@ -45,44 +45,72 @@ void App::run()
 {
     while(!shouldClose())
     {
-        renderer.draw();
-        // todo: factor out into refreshFilter() method?
-        if(filterDirty)
+        switch(state)
         {
-            std::string_view s(stringFilterBuffer.data());
-            std::wstring ws = utf8_decode(s);
-            filteredTracks.clear();
-            for(auto& track : playlist)
+        case State::LOG_IN:
+            runLogIn();
+            break;
+        case State::PL_SELECT:
+            runPLSelect();
+            break;
+        case State::MAIN:
+            runMain();
+            break;
+        default:
+            assert(false && "App state not handled");
+        }
+    }
+}
+
+void App::runLogIn()
+{
+    // renderer.drawLogIn();
+    state = State::PL_SELECT;
+}
+void App::runPLSelect()
+{
+    // renderer.drawPLSelect();
+    state = State::MAIN;
+}
+void App::runMain()
+{
+    renderer.drawMain();
+    // todo: factor out into refreshFilter() method?
+    if(filterDirty)
+    {
+        std::string_view s(stringFilterBuffer.data());
+        std::wstring ws = utf8_decode(s);
+        filteredTracks.clear();
+        for(auto& track : playlist)
+        {
+            for(auto i = 0; i < Track::featureAmount; i++)
             {
-                for(auto i = 0; i < Track::featureAmount; i++)
+                if(track.features[i] < featureMinMaxValues[i].x ||
+                   track.features[i] > featureMinMaxValues[i].y)
                 {
-                    if(track.features[i] < featureMinMaxValues[i].x ||
-                       track.features[i] > featureMinMaxValues[i].y)
-                    {
-                        goto failedFilter;
-                    }
+                    goto failedFilter;
                 }
-                if(!s.empty())
-                {
-                    if(track.trackName.find(ws) == std::string::npos &&
-                       track.artistsNames.find(ws) == std::string::npos)
-                    {
-                        goto failedFilter;
-                    }
-                }
-                filteredTracks.push_back(&track);
-            failedFilter:;
             }
-            // also have to re-sort here;
-            filteredTracksTable.sortData();
-            graphingDirty = true;
-            filterDirty = false;
+            if(!s.empty())
+            {
+                if(track.trackName.find(ws) == std::string::npos &&
+                   track.artistsNames.find(ws) == std::string::npos)
+                {
+                    goto failedFilter;
+                }
+            }
+            filteredTracks.push_back(&track);
+        failedFilter:;
         }
-        if(graphingDirty)
-        {
-            renderer.rebuildBuffer();
-            graphingDirty = false;
-        }
+        // also have to re-sort here;
+        filteredTracksTable.sortData();
+        graphingDirty = true;
+        filterDirty = false;
+    }
+    if(graphingDirty)
+    {
+        renderer.rebuildBuffer();
+        graphingDirty = false;
     }
 }
 

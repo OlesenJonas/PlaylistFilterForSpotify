@@ -31,8 +31,10 @@ class Renderer
     Renderer& operator=(Renderer&& other) = delete; // move assign
     ~Renderer();
 
-    void init();
-    void draw();
+    void drawLogIn();
+    void drawPLSelect();
+    void drawMain();
+
     void buildRenderData();
     void rebuildBuffer();
     void highlightWindow(const std::string& name);

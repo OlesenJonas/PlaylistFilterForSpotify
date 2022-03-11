@@ -27,6 +27,10 @@ class App
     ~App();
 
     void run();
+    void runLogIn();
+    void runPLSelect();
+    void runMain();
+
     bool pinTrack(Track* track);
     bool startTrackPlayback(const std::string& trackId);
     bool stopPlayback();
