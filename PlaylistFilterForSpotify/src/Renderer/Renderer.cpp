@@ -17,100 +17,9 @@
 
 Renderer::Renderer(App& a) : app(a)
 {
-}
+    // todo: handle errors!
 
-Renderer::~Renderer()
-{
-    glDeleteTextures(1, &coverArrayHandle);
-    // todo: probably more stuff that i forgot to delete here (eg all buffers)
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-void Renderer::buildRenderData()
-{
-    unsigned char* data = nullptr;
-
-    // init covers array & load placeholder Album cover
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &coverArrayHandle);
-    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureStorage3D(coverArrayHandle, 3, GL_RGB8, 64, 64, app.coverTable.size() + 1);
-    // Load data of placeholder texture
-    {
-        int x, y, components;
-        data = stbi_load(MISC_PATH "/albumPlaceholder.jpg", &x, &y, &components, 3);
-        // Load into first layer of array
-        glTextureSubImage3D(coverArrayHandle, 0, 0, 0, 0, 64, 64, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
-    }
-    glGenerateTextureMipmap(coverArrayHandle);
-    // create image view to handle layer as indiv texture
-    GLuint defaultCoverHandle;
-    glGenTextures(1, &defaultCoverHandle);
-    glTextureView(defaultCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, 0, 1);
-
-    stbi_image_free(data);
-
-    CoverInfo defaultInfo = {.url = "", .layer = 0, .id = defaultCoverHandle};
-    app.coverTable[""] = defaultInfo;
-
-    for(auto& entry : app.coverTable)
-    {
-        entry.second.id = defaultCoverHandle;
-    }
-
-    coversTotal = app.coverTable.size() - 1;
-    coversLoaded = coversTotal;
-
-    glGenVertexArrays(1, &trackVAO);
-    glBindVertexArray(trackVAO);
-    glGenBuffers(1, &trackVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, trackVBO);
-    trackBuffer.reserve(app.filteredTracks.size());
-    fillTrackBuffer(0, 1, 2);
-    glBufferData(
-        GL_ARRAY_BUFFER, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TrackBufferElement), nullptr);
-    glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(TrackBufferElement), (void*)(3 * sizeof(float)));
-}
-
-void Renderer::rebuildBuffer()
-{
-    fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
-}
-
-void Renderer::fillTrackBuffer(int i1, int i2, int i3)
-{
-    Track* baseptr = app.playlist.data();
-    trackBuffer.clear();
-    for(const Track* track : app.filteredTracks)
-    {
-        uint32_t index = static_cast<uint32_t>(track - baseptr);
-        trackBuffer.push_back(
-            {{track->features[i1], track->features[i2], track->features[i3]},
-             track->coverInfoPtr->layer,
-             index});
-    }
-    glNamedBufferData(
-        trackVBO, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
-};
-
-void Renderer::highlightWindow(const std::string& name)
-{
-    ImGui::SetWindowFocus(name.c_str());
-}
-
-// todo: check if already initialized
-void Renderer::init()
-{
-    // initialize window values
+    //  initialize window values
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -310,6 +219,94 @@ void Renderer::init()
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
+}
+
+Renderer::~Renderer()
+{
+    glDeleteTextures(1, &coverArrayHandle);
+    // todo: probably more stuff that i forgot to delete here (eg all buffers)
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
+void Renderer::buildRenderData()
+{
+    unsigned char* data = nullptr;
+
+    // init covers array & load placeholder Album cover
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &coverArrayHandle);
+    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(coverArrayHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureStorage3D(coverArrayHandle, 3, GL_RGB8, 64, 64, app.coverTable.size() + 1);
+    // Load data of placeholder texture
+    {
+        int x, y, components;
+        data = stbi_load(MISC_PATH "/albumPlaceholder.jpg", &x, &y, &components, 3);
+        // Load into first layer of array
+        glTextureSubImage3D(coverArrayHandle, 0, 0, 0, 0, 64, 64, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
+    }
+    glGenerateTextureMipmap(coverArrayHandle);
+    // create image view to handle layer as indiv texture
+    GLuint defaultCoverHandle;
+    glGenTextures(1, &defaultCoverHandle);
+    glTextureView(defaultCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, 0, 1);
+
+    stbi_image_free(data);
+
+    CoverInfo defaultInfo = {.url = "", .layer = 0, .id = defaultCoverHandle};
+    app.coverTable[""] = defaultInfo;
+
+    for(auto& entry : app.coverTable)
+    {
+        entry.second.id = defaultCoverHandle;
+    }
+
+    coversTotal = app.coverTable.size() - 1;
+    coversLoaded = coversTotal;
+
+    glGenVertexArrays(1, &trackVAO);
+    glBindVertexArray(trackVAO);
+    glGenBuffers(1, &trackVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, trackVBO);
+    trackBuffer.reserve(app.filteredTracks.size());
+    fillTrackBuffer(0, 1, 2);
+    glBufferData(
+        GL_ARRAY_BUFFER, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TrackBufferElement), nullptr);
+    glEnableVertexAttribArray(1);
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(TrackBufferElement), (void*)(3 * sizeof(float)));
+}
+
+void Renderer::rebuildBuffer()
+{
+    fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
+}
+
+void Renderer::fillTrackBuffer(int i1, int i2, int i3)
+{
+    Track* baseptr = app.playlist.data();
+    trackBuffer.clear();
+    for(const Track* track : app.filteredTracks)
+    {
+        uint32_t index = static_cast<uint32_t>(track - baseptr);
+        trackBuffer.push_back(
+            {{track->features[i1], track->features[i2], track->features[i3]},
+             track->coverInfoPtr->layer,
+             index});
+    }
+    glNamedBufferData(
+        trackVBO, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
+};
+
+void Renderer::highlightWindow(const std::string& name)
+{
+    ImGui::SetWindowFocus(name.c_str());
 }
 
 void Renderer::draw()

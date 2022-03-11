@@ -27,7 +27,6 @@ App::App()
     // initially the filtered playlist is the same as the original
     filteredTracks = playlistTracks;
 
-    renderer.init();
     renderer.buildRenderData();
     pinnedTracksTable.calcHeaderWidth();
     filteredTracksTable.calcHeaderWidth();
