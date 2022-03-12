@@ -9,14 +9,8 @@
 App::App()
     : renderer(*this), pinnedTracksTable(*this, pinnedTracks), filteredTracksTable(*this, filteredTracks)
 {
-    // Spotify Api //////////////////////////////////////////////////
     apiAccess = SpotifyApiAccess();
-
-    featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
-    featureMinMaxValues[7] = {0, 300};
-
-    pinnedTracksTable.calcHeaderWidth();
-    filteredTracksTable.calcHeaderWidth();
+    resetFilterValues();
 }
 
 App::~App()
@@ -155,6 +149,12 @@ void App::extractPlaylistIDFromInput()
 std::optional<std::string> App::checkPlaylistID(std::string_view id)
 {
     return apiAccess.checkPlaylistExistance(id);
+}
+
+void App::resetFilterValues()
+{
+    featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
+    featureMinMaxValues[7] = {0, 300};
 }
 
 bool App::pinTrack(Track* track)

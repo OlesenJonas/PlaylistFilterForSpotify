@@ -86,6 +86,7 @@ class Table : TableAttributes<type>
 template <TableType type>
 Table<type>::Table(App& p_app, std::vector<Track*>& p_tracks) : app(p_app), tracks(p_tracks)
 {
+    calcHeaderWidth();
 }
 
 // todo: move into constructor once the renderer constructor works correctly

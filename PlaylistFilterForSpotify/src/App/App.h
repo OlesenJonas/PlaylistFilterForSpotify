@@ -38,6 +38,7 @@ class App
     void extractPlaylistIDFromInput();
     std::optional<std::string> checkPlaylistID(std::string_view id);
 
+    void resetFilterValues();
     bool pinTrack(Track* track);
     bool startTrackPlayback(const std::string& trackId);
     bool stopPlayback();
@@ -46,8 +47,12 @@ class App
 
     const Renderer& getRenderer();
 
-    // todo: make private, add get and/or set
+  private:
+    // this needs to be first, so it gets initialized first
+    Renderer renderer;
 
+  public:
+    // todo: make private, add get and/or set
     // playlist ids are always 22 characters long, but user could input a full URL
     // with potentially multiple query parameters
     std::array<char, 200> playlistIDInput{};
@@ -85,6 +90,4 @@ class App
     // todo: this shouldnt instantly get a refresh token
     //  instead it should be an "empty" object until it gets initialized with a userId etc
     SpotifyApiAccess apiAccess;
-
-    Renderer renderer;
 };
