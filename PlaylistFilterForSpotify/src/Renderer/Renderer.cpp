@@ -1,3 +1,5 @@
+#include <future>
+
 #include "glm/common.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -388,8 +390,9 @@ void Renderer::drawPLSelect()
                 ImGui::Text("Playlist found: %s", app.playlistStatus.value().c_str());
                 if(ImGui::Button("Load Playlist##selection"))
                 {
+                    App* test = &app;
                     app.loadingPlaylist = true;
-                    // start other thread loading playlist
+                    app.doneLoading = std::async(std::launch::async, &App::loadSelectedPlaylist, &app);
                 }
             }
             else

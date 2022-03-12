@@ -33,6 +33,8 @@ class App
     void runPLSelect();
     void runMain();
 
+    void loadSelectedPlaylist();
+
     void extractPlaylistIDFromInput();
     std::optional<std::string> checkPlaylistID(std::string_view id);
 

@@ -1,6 +1,8 @@
 #include "SpotifyApiAccess.h"
+#include "ShaderProgram/ShaderProgram.h"
 #include "cpr/body.h"
 #include "cpr/payload.h"
+#include <cguid.h>
 #include <string>
 #include <tuple>
 
@@ -30,7 +32,7 @@ void SpotifyApiAccess::refreshAccessToken()
 }
 
 std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
-SpotifyApiAccess::buildPlaylistData(std::string_view playlistID)
+SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progressTracker)
 {
     cpr::Response r = cpr::Get(
         cpr::Url(
@@ -38,6 +40,7 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID)
             "/tracks?limit=50&fields=total"),
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
     auto total = json::parse(r.text)["total"].get<uint32_t>();
+    uint32_t tracksLoaded = 0;
 
     std::vector<Track> playlist;
     playlist.reserve(total);
@@ -59,7 +62,7 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID)
     r_json["next"] = queryUrl;
     do
     {
-        // Load 50 *requestCountLimit tracks at once while there still tracks to be loaded
+        // Load requestCountLimit (50) tracks at once while there still tracks to be loaded
         const auto& a = r_json["next"];
         queryUrl = r_json["next"].get<std::string>();
         cpr::Response r = cpr::Get(
@@ -163,6 +166,10 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID)
         // }
         // std::cout << std::endl;
         iteration++;
+
+        tracksLoaded += requestCountLimit;
+        *progressTracker = static_cast<float>(tracksLoaded) / static_cast<float>(total);
+        *progressTracker = 0.9f * std::min(*progressTracker, 1.0f);
     }
     while(!r_json["next"].is_null());
 

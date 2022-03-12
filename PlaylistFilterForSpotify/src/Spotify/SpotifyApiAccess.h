@@ -23,7 +23,7 @@ class SpotifyApiAccess
     void refreshAccessToken();
 
     std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
-    buildPlaylistData(std::string_view playlistID);
+    buildPlaylistData(std::string_view playlistID, float* progressTracker);
 
     json getAlbum(const std::string& albumId);
 

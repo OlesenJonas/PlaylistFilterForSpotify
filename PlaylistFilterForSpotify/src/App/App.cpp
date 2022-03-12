@@ -1,6 +1,8 @@
 #include "App.h"
 #include "GLFW/glfw3.h"
 #include "Renderer/Renderer.h"
+#include <chrono>
+#include <future>
 #include <random>
 #include <unordered_set>
 
@@ -52,30 +54,23 @@ void App::runLogIn()
     // renderer.drawLogIn();
     state = State::PL_SELECT;
 }
+
 void App::runPLSelect()
 {
     renderer.drawPLSelect();
-    // todo: check if future is ready, dont just move on instantly!
     if(loadingPlaylist)
     {
-        // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
-        // lambda can switch back if lambda refactored into function
-        std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlistID);
-        // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
-
-        playlistTracks = std::vector<Track*>(playlist.size());
-        for(auto i = 0; i < playlist.size(); i++)
+        std::future_status status = doneLoading.wait_for(std::chrono::seconds(0));
+        if(status == std::future_status::ready)
         {
-            playlistTracks[i] = &playlist[i];
+            // can only upload to GPU from main thread, so this last step has to happen here
+            // to account for the extra "loading time" the progress bar in renderer.cpp only goes up to 90% :)
+            renderer.buildRenderData();
+            state = State::MAIN;
         }
-        // initially the filtered playlist is the same as the original
-        filteredTracks = playlistTracks;
-
-        renderer.buildRenderData();
-
-        state = State::MAIN;
     }
 }
+
 void App::runMain()
 {
     renderer.drawMain();
@@ -116,6 +111,24 @@ void App::runMain()
         renderer.rebuildBuffer();
         graphingDirty = false;
     }
+}
+
+void App::loadSelectedPlaylist()
+{
+    // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
+    // lambda can switch back if lambda refactored into function
+    std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
+    // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
+
+    App* test = this;
+
+    playlistTracks = std::vector<Track*>(playlist.size());
+    for(auto i = 0; i < playlist.size(); i++)
+    {
+        playlistTracks[i] = &playlist[i];
+    }
+    // initially the filtered playlist is the same as the original
+    filteredTracks = playlistTracks;
 }
 
 void App::extractPlaylistIDFromInput()
