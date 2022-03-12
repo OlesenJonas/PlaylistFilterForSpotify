@@ -30,10 +30,12 @@ void SpotifyApiAccess::refreshAccessToken()
 }
 
 std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
-SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
+SpotifyApiAccess::buildPlaylistData(std::string_view playlistID)
 {
     cpr::Response r = cpr::Get(
-        cpr::Url("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50&fields=total"),
+        cpr::Url(
+            "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
+            "/tracks?limit=50&fields=total"),
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
     auto total = json::parse(r.text)["total"].get<uint32_t>();
 
@@ -50,7 +52,7 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
     int requestCountLimit = 50;
     int iteration = 0;
     std::string queryUrl =
-        "https://api.spotify.com/v1/playlists/" + playlistID +
+        "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
         "/tracks?limit=" + std::to_string(requestCountLimit) +
         "&fields=next,items(track(name,id,artists(name),popularity,album(id,name,images)))";
     json r_json;

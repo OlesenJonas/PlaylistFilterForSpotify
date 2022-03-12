@@ -4,6 +4,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <future>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -46,7 +47,8 @@ class App
     // todo: make private, add get and/or set
 
     // playlist ids are always 22 characters long, but user could input a full URL
-    std::array<char, 100> playlistIDInput{};
+    // with potentially multiple query parameters
+    std::array<char, 200> playlistIDInput{};
     std::string_view playlistID = "";
     std::optional<std::string> playlistStatus;
     std::vector<Track> playlist;
@@ -73,6 +75,7 @@ class App
     State state = LOG_IN;
     bool loadingPlaylist = false;
     float loadPlaylistProgress = 0.0f;
+    std::future<void> doneLoading;
 
   private:
     bool shouldClose();

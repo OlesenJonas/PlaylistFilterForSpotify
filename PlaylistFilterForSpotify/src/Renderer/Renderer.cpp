@@ -374,14 +374,23 @@ void Renderer::drawPLSelect()
         ImGui::SetNextItemWidth(60 * ImGui::CalcTextSize(u8"M").x);
         if(ImGui::InputText("##playlistInput", app.playlistIDInput.data(), app.playlistIDInput.size() - 1))
         {
+            app.playlistStatus.reset();
             app.extractPlaylistIDFromInput();
+            if(!app.playlistID.empty())
+            {
+                app.playlistStatus = app.checkPlaylistID(app.playlistID);
+            }
         }
         if(!app.playlistID.empty())
         {
-            app.playlistStatus = app.checkPlaylistID(app.playlistID);
             if(app.playlistStatus.has_value())
             {
                 ImGui::Text("Playlist found: %s", app.playlistStatus.value().c_str());
+                if(ImGui::Button("Load Playlist##selection"))
+                {
+                    app.loadingPlaylist = true;
+                    // start other thread loading playlist
+                }
             }
             else
             {

@@ -9,25 +9,10 @@ App::App()
 {
     // Spotify Api //////////////////////////////////////////////////
     apiAccess = SpotifyApiAccess();
-    const std::string playlist_test_id = "4yDYkPpEix7s5HK5ZBd7lz"; // art pop
-    // const std::string playlist_test_id = "0xmNlq3D0z3Dxkt0T0mqyj"; // liked
-    // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in lambda
-    // can switch back if lambda refactored into function
-    std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlist_test_id);
-    // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlist_test_id);
 
     featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
     featureMinMaxValues[7] = {0, 300};
 
-    playlistTracks = std::vector<Track*>(playlist.size());
-    for(auto i = 0; i < playlist.size(); i++)
-    {
-        playlistTracks[i] = &playlist[i];
-    }
-    // initially the filtered playlist is the same as the original
-    filteredTracks = playlistTracks;
-
-    renderer.buildRenderData();
     pinnedTracksTable.calcHeaderWidth();
     filteredTracksTable.calcHeaderWidth();
 }
@@ -70,7 +55,26 @@ void App::runLogIn()
 void App::runPLSelect()
 {
     renderer.drawPLSelect();
-    // state = State::MAIN;
+    // todo: check if future is ready, dont just move on instantly!
+    if(loadingPlaylist)
+    {
+        // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
+        // lambda can switch back if lambda refactored into function
+        std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlistID);
+        // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
+
+        playlistTracks = std::vector<Track*>(playlist.size());
+        for(auto i = 0; i < playlist.size(); i++)
+        {
+            playlistTracks[i] = &playlist[i];
+        }
+        // initially the filtered playlist is the same as the original
+        filteredTracks = playlistTracks;
+
+        renderer.buildRenderData();
+
+        state = State::MAIN;
+    }
 }
 void App::runMain()
 {
