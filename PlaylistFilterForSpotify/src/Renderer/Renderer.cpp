@@ -72,9 +72,12 @@ Renderer::Renderer(App& a) : app(a)
     ImGuiIO& io = ImGui::GetIO();
     ImGui::GetStyle().ScaleAllSizes(dpiScale);
 
+#ifdef WIN32
     ImFont* defaultFont =
         io.Fonts->AddFontFromFileTTF("C:/WINDOWS/Fonts/verdana.ttf", FONT_SIZE, nullptr, nullptr);
-
+#else
+    #error No font selected for non win32 systems
+#endif
     // need a font that supports all requested special symbols:
     // list of fonts supporting a symbol can be found here:
     // https://www.fileformat.info/info/unicode/char/25B6/fontsupport.htm
@@ -529,7 +532,6 @@ void Renderer::drawMain()
     // clear last frame
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // not sure why [1][2] is world y of camera y (instead of [1][1])
     float yoff = 2 * ((*cam.getView())[1][2] < 0) - 1;
     float zoff = 2 * ((*cam.getView())[2][2] < 0) - 1;
     float xoff = 2 * ((*cam.getView())[0][2] < 0) - 1;
