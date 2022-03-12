@@ -1,3 +1,6 @@
+#include <future>
+
+#include "glm/common.hpp"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -15,47 +18,16 @@
 #include "utils/OpenGLErrorHandler.h"
 #include "utils/imgui_extensions.h"
 
-void Renderer::rebuildBuffer()
-{
-    fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
-}
-
-void Renderer::fillTrackBuffer(int i1, int i2, int i3)
-{
-    Track* baseptr = app.playlist.data();
-    trackBuffer.clear();
-    for(const Track* track : app.filteredTracks)
-    {
-        uint32_t index = static_cast<uint32_t>(track - baseptr);
-        trackBuffer.push_back(
-            {{track->features[i1], track->features[i2], track->features[i3]},
-             track->coverInfoPtr->layer,
-             index});
-    }
-    glNamedBufferData(
-        trackVBO, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
-};
-
-void Renderer::highlightWindow(const std::string& name)
-{
-    ImGui::SetWindowFocus(name.c_str());
-}
-
 Renderer::Renderer(App& a) : app(a)
 {
-}
+    // todo: handle errors!
 
-// todo: check if already initialized
-void Renderer::init()
-{
-    // initliaze window values
+    //  initialize window values
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#if MSAA > 0
     glfwWindowHint(GLFW_SAMPLES, MSAA);
-#endif
 #ifdef OPENGL_DEBUG_CONTEXT
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
@@ -181,11 +153,11 @@ void Renderer::init()
     const float subdiv = 10;
     for(int i = 0; i <= (int)subdiv; i++)
     {
-        gridPoints.emplace_back(2 * i / subdiv - 1, 0.f, -1.f);
-        gridPoints.emplace_back(2 * i / subdiv - 1, 0.f, 1.f);
+        gridPoints.emplace_back(2.0f * i / subdiv - 1, 0.f, -1.f);
+        gridPoints.emplace_back(2.0f * i / subdiv - 1, 0.f, 1.f);
 
-        gridPoints.emplace_back(-1.0f, 0.f, 2 * i / subdiv - 1);
-        gridPoints.emplace_back(1.0f, 0.f, 2 * i / subdiv - 1);
+        gridPoints.emplace_back(-1.0f, 0.f, 2.0f * i / subdiv - 1);
+        gridPoints.emplace_back(1.0f, 0.f, 2.0f * i / subdiv - 1);
     }
     glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
     glBufferData(
@@ -225,18 +197,44 @@ void Renderer::init()
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         // should switch back to default (4?) ?
-
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
-
-    // texture settings
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
     glBindTexture(GL_TEXTURE_2D, 0);
-
     stbi_image_free(data);
+
+    // set time to 0 before renderloop
+    last_frame = 0.0;
+    glfwSetTime(0.0);
+
+    //  draw one frame to establish ImGui Context
+    // need this otherwise CalcTextSize in Table Constructor doesnt work :shrug:
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwSwapBuffers(window);
+}
+
+Renderer::~Renderer()
+{
+    glDeleteTextures(1, &coverArrayHandle);
+    // todo: probably more stuff that i forgot to delete here (eg all buffers)
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
+void Renderer::buildRenderData()
+{
+    unsigned char* data = nullptr;
 
     // init covers array & load placeholder Album cover
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &coverArrayHandle);
@@ -281,35 +279,146 @@ void Renderer::init()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TrackBufferElement), nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(TrackBufferElement), (void*)(3 * sizeof(float)));
+}
 
-    // set time to 0 before renderloop
-    last_frame = 0.0;
-    glfwSetTime(0.0);
+void Renderer::rebuildBuffer()
+{
+    fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
+}
 
-    //  draw one frame to establish ImGui Context
-    // need this otherwise CalcTextSize in Table Constructor doesnt work :shrug:
+void Renderer::fillTrackBuffer(int i1, int i2, int i3)
+{
+    Track* baseptr = app.playlist.data();
+    trackBuffer.clear();
+    for(const Track* track : app.filteredTracks)
+    {
+        uint32_t index = static_cast<uint32_t>(track - baseptr);
+        trackBuffer.push_back(
+            {{track->features[i1], track->features[i2], track->features[i3]},
+             track->coverInfoPtr->layer,
+             index});
+    }
+    glNamedBufferData(
+        trackVBO, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
+};
+
+void Renderer::highlightWindow(const std::string& name)
+{
+    ImGui::SetWindowFocus(name.c_str());
+}
+
+void Renderer::drawLogIn()
+{
+}
+
+void Renderer::drawPLSelect()
+{
+    glfwPollEvents();
+    // start imgui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    // process time, or use ImGui's delatTime
+    double current_frame = glfwGetTime();
+    float delta_time = current_frame - last_frame;
+    last_frame = current_frame;
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    const ImGuiWindowFlags bgWindowFlags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
+                                           ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar;
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+    ImGui::Begin("bgWindow", nullptr, bgWindowFlags);
+    {
+        float fpsTextHeight = ImGui::GetTextLineHeightWithSpacing();
+        ImGui::SetCursorScreenPos(
+            ImVec2(scaleByDPI<float>(5), height - fpsTextHeight - scaleByDPI<float>(5)));
+        ImGui::Text(
+            "Application average %.3f ms/frame (%.1f FPS)",
+            1000.0f / ImGui::GetIO().Framerate,
+            ImGui::GetIO().Framerate);
+
+        const ImVec2 textSize = ImGui::CalcTextSize("All data provided by");
+        const ImVec2 padding(scaleByDPI(5.f), scaleByDPI(10.f));
+        const ImVec2 logoSize = {scaleByDPI(100.0f), scaleByDPI(100.0f * logoAspect)};
+        const ImVec2 start{width - padding.x, height - padding.y};
+        ImGui::SetCursorScreenPos({start.x - logoSize.x, start.y - logoSize.y});
+        ImGui::Image((void*)(intptr_t)(spotifyLogoHandle), logoSize);
+        ImGui::SetCursorScreenPos({start.x - textSize.x, start.y - fpsTextHeight - logoSize.y});
+        ImGui::TextUnformatted("All data provided by");
+
+        if(app.loadingPlaylist)
+        {
+            const float barWidth = static_cast<float>(width) / 3.0f;
+            const float barHeight = scaleByDPI(30.0f);
+            ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
+            ImGui::HorizontalBar(0.0f, app.loadPlaylistProgress, {barWidth, barHeight});
+        }
+    }
+    ImGui::End();
+
+    if(!app.loadingPlaylist)
+    {
+        ImGui::Begin(
+            "PlaylistSelection",
+            nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+        ImVec2 size = ImGui::GetWindowSize();
+        ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
+        ImGui::TextUnformatted("Enter Playlist URL or ID");
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
+        ImGui::TextUnformatted(
+            "eg:\n- https://open.spotify.com/playlist/37i9dQZF1DX4jP4eebSWR9?si=427d9c1af97c4600\nor "
+            "just:\n- 37i9dQZF1DX4jP4eebSWR9");
+        ImGui::PopStyleColor();
+        ImGui::SetNextItemWidth(60 * ImGui::CalcTextSize(u8"M").x);
+        if(ImGui::InputText("##playlistInput", app.playlistIDInput.data(), app.playlistIDInput.size() - 1))
+        {
+            app.playlistStatus.reset();
+            app.extractPlaylistIDFromInput();
+            if(!app.playlistID.empty())
+            {
+                app.playlistStatus = app.checkPlaylistID(app.playlistID);
+            }
+        }
+        if(!app.playlistID.empty())
+        {
+            if(app.playlistStatus.has_value())
+            {
+                ImGui::Text("Playlist found: %s", app.playlistStatus.value().c_str());
+                if(ImGui::Button("Load Playlist##selection"))
+                {
+                    App* test = &app;
+                    app.loadingPlaylist = true;
+                    app.doneLoading = std::async(std::launch::async, &App::loadSelectedPlaylist, &app);
+                }
+            }
+            else
+            {
+                ImGui::Text(
+                    "No Playlist found with ID: %.*s\nMake sure you have the necessary permissions",
+                    static_cast<int>(app.playlistID.size()),
+                    app.playlistID.data());
+            }
+        }
+        else
+        {
+            ImGui::TextUnformatted("No ID found in input!");
+        }
+        ImGui::End();
+    }
     ImGui::Render();
+
+    // Draw the Render Data into framebuffer
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Swap buffer
     glfwSwapBuffers(window);
 }
 
-Renderer::~Renderer()
-{
-    glDeleteTextures(1, &coverArrayHandle);
-    // todo: probably more stuff that i forgot to delete here
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
-void Renderer::draw()
+void Renderer::drawMain()
 {
     glfwPollEvents();
     // start imgui frame

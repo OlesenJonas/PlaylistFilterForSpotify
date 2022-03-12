@@ -30,10 +30,12 @@ class Renderer
     Renderer(Renderer&&) = delete;                  // move constr
     Renderer& operator=(Renderer&& other) = delete; // move assign
     ~Renderer();
-    void init();
 
-    void draw();
+    void drawLogIn();
+    void drawPLSelect();
+    void drawMain();
 
+    void buildRenderData();
     void rebuildBuffer();
     void highlightWindow(const std::string& name);
 
@@ -80,8 +82,6 @@ class Renderer
     GLuint coverArrayHandle;
     GLuint coverArrayFreeIndex = 1;
     bool canLoadCovers = true;
-    // todo: generalize to any progress bar, have just progressCurrent & progressMax values with additional
-    // bool: inProgress or smth
     int coversTotal;
     int coversLoaded;
     std::mutex coverLoadQueueMutex;
@@ -99,6 +99,7 @@ class Renderer
     ShaderProgram lineShader;
     float logoAspect = 1.0f;
     GLuint spotifyLogoHandle;
+    GLuint loadingSpiralHandle;
 
     bool show_demo_window = true;
     bool show_another_window = false;

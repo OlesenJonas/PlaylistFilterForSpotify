@@ -1,6 +1,8 @@
 #include "App.h"
 #include "GLFW/glfw3.h"
 #include "Renderer/Renderer.h"
+#include <chrono>
+#include <future>
 #include <random>
 #include <unordered_set>
 
@@ -9,25 +11,10 @@ App::App()
 {
     // Spotify Api //////////////////////////////////////////////////
     apiAccess = SpotifyApiAccess();
-    const std::string playlist_test_id = "4yDYkPpEix7s5HK5ZBd7lz"; // art pop
-    // const std::string playlist_test_id = "0xmNlq3D0z3Dxkt0T0mqyj"; // liked
-    // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in lambda
-    // switch back if lambda refactored into function
-    std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlist_test_id);
-    // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlist_test_id);
 
     featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
     featureMinMaxValues[7] = {0, 300};
 
-    playlistTracks = std::vector<Track*>(playlist.size());
-    for(auto i = 0; i < playlist.size(); i++)
-    {
-        playlistTracks[i] = &playlist[i];
-    }
-    // initially the filtered playlist is the same as the original
-    filteredTracks = playlistTracks;
-
-    renderer.init();
     pinnedTracksTable.calcHeaderWidth();
     filteredTracksTable.calcHeaderWidth();
 }
@@ -45,45 +32,129 @@ void App::run()
 {
     while(!shouldClose())
     {
-        renderer.draw();
-        // todo: factor out into refreshFilter() method?
-        if(filterDirty)
+        switch(state)
         {
-            std::string_view s(stringFilterBuffer.data());
-            std::wstring ws = utf8_decode(s);
-            filteredTracks.clear();
-            for(auto& track : playlist)
-            {
-                for(auto i = 0; i < Track::featureAmount; i++)
-                {
-                    if(track.features[i] < featureMinMaxValues[i].x ||
-                       track.features[i] > featureMinMaxValues[i].y)
-                    {
-                        goto failedFilter;
-                    }
-                }
-                if(!s.empty())
-                {
-                    if(track.trackName.find(ws) == std::string::npos &&
-                       track.artistsNames.find(ws) == std::string::npos)
-                    {
-                        goto failedFilter;
-                    }
-                }
-                filteredTracks.push_back(&track);
-            failedFilter:;
-            }
-            // also have to re-sort here;
-            filteredTracksTable.sortData();
-            graphingDirty = true;
-            filterDirty = false;
-        }
-        if(graphingDirty)
-        {
-            renderer.rebuildBuffer();
-            graphingDirty = false;
+        case State::LOG_IN:
+            runLogIn();
+            break;
+        case State::PL_SELECT:
+            runPLSelect();
+            break;
+        case State::MAIN:
+            runMain();
+            break;
+        default:
+            assert(false && "App state not handled");
         }
     }
+}
+
+void App::runLogIn()
+{
+    // renderer.drawLogIn();
+    state = State::PL_SELECT;
+}
+
+void App::runPLSelect()
+{
+    renderer.drawPLSelect();
+    if(loadingPlaylist)
+    {
+        std::future_status status = doneLoading.wait_for(std::chrono::seconds(0));
+        if(status == std::future_status::ready)
+        {
+            // can only upload to GPU from main thread, so this last step has to happen here
+            // to account for the extra "loading time" the progress bar in renderer.cpp only goes up to 90% :)
+            renderer.buildRenderData();
+            state = State::MAIN;
+        }
+    }
+}
+
+void App::runMain()
+{
+    renderer.drawMain();
+    // todo: factor out into refreshFilter() method?
+    if(filterDirty)
+    {
+        std::string_view s(stringFilterBuffer.data());
+        std::wstring ws = utf8_decode(s);
+        filteredTracks.clear();
+        for(auto& track : playlist)
+        {
+            for(auto i = 0; i < Track::featureAmount; i++)
+            {
+                if(track.features[i] < featureMinMaxValues[i].x ||
+                   track.features[i] > featureMinMaxValues[i].y)
+                {
+                    goto failedFilter;
+                }
+            }
+            if(!s.empty())
+            {
+                if(track.trackName.find(ws) == std::string::npos &&
+                   track.artistsNames.find(ws) == std::string::npos)
+                {
+                    goto failedFilter;
+                }
+            }
+            filteredTracks.push_back(&track);
+        failedFilter:;
+        }
+        // also have to re-sort here;
+        filteredTracksTable.sortData();
+        graphingDirty = true;
+        filterDirty = false;
+    }
+    if(graphingDirty)
+    {
+        renderer.rebuildBuffer();
+        graphingDirty = false;
+    }
+}
+
+void App::loadSelectedPlaylist()
+{
+    // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
+    // lambda can switch back if lambda refactored into function
+    std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
+    // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
+
+    App* test = this;
+
+    playlistTracks = std::vector<Track*>(playlist.size());
+    for(auto i = 0; i < playlist.size(); i++)
+    {
+        playlistTracks[i] = &playlist[i];
+    }
+    // initially the filtered playlist is the same as the original
+    filteredTracks = playlistTracks;
+}
+
+void App::extractPlaylistIDFromInput()
+{
+    std::string_view input = &playlistIDInput[0];
+    if(input.size() == 22)
+    {
+        playlistID = input;
+    }
+    else
+    {
+        auto res = input.find("/playlist/");
+        if(res != std::string_view::npos)
+        {
+            playlistID = {&playlistIDInput[res + 10], 22};
+        }
+        else
+        {
+            playlistID = "";
+        }
+    }
+}
+
+std::optional<std::string> App::checkPlaylistID(std::string_view id)
+{
+    return apiAccess.checkPlaylistExistance(id);
 }
 
 bool App::pinTrack(Track* track)

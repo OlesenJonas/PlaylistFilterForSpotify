@@ -1,6 +1,8 @@
 #include "SpotifyApiAccess.h"
+#include "ShaderProgram/ShaderProgram.h"
 #include "cpr/body.h"
 #include "cpr/payload.h"
+#include <cguid.h>
 #include <string>
 #include <tuple>
 
@@ -30,12 +32,15 @@ void SpotifyApiAccess::refreshAccessToken()
 }
 
 std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
-SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
+SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progressTracker)
 {
     cpr::Response r = cpr::Get(
-        cpr::Url("https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50&fields=total"),
+        cpr::Url(
+            "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
+            "/tracks?limit=50&fields=total"),
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
     auto total = json::parse(r.text)["total"].get<uint32_t>();
+    uint32_t tracksLoaded = 0;
 
     std::vector<Track> playlist;
     playlist.reserve(total);
@@ -50,14 +55,14 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
     int requestCountLimit = 50;
     int iteration = 0;
     std::string queryUrl =
-        "https://api.spotify.com/v1/playlists/" + playlistID +
+        "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
         "/tracks?limit=" + std::to_string(requestCountLimit) +
         "&fields=next,items(track(name,id,artists(name),popularity,album(id,name,images)))";
     json r_json;
     r_json["next"] = queryUrl;
     do
     {
-        // Load 50 *requestCountLimit tracks at once while there still tracks to be loaded
+        // Load requestCountLimit (50) tracks at once while there still tracks to be loaded
         const auto& a = r_json["next"];
         queryUrl = r_json["next"].get<std::string>();
         cpr::Response r = cpr::Get(
@@ -103,19 +108,18 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
                 iteration * requestCountLimit + j, id, trackNameE, artistsNamesE, albumId, albumNameE);
             track.features[8] = track_json["popularity"].get<int>() / 100.f;
 
+            auto lastElement = [](const nlohmann::basic_json<>& json) -> const auto&
+            {
+                return (*(--json.end()));
+            };
             // create and/or link to album table
             auto it = coverTable.find(albumId);
             if(it == coverTable.end())
             {
                 // not found, construct and set pointer
-                // may need to pass defaultCoverHandle to function if setting outside doesnt work
-                auto lastElement = [](const nlohmann::basic_json<>& json) -> const auto&
-                {
-                    return (*(--json.end()));
-                };
                 const std::string& coverUrl =
                     lastElement(track_json["album"]["images"])["url"].get<std::string>();
-                CoverInfo info{.url = coverUrl, .layer = 0, .id = 420};
+                CoverInfo info{.url = coverUrl, .layer = 0, .id = 0xFFFFFFFFu};
                 auto newEntry = coverTable.emplace(albumId, info);
                 track.coverInfoPtr = &(newEntry.first->second);
             }
@@ -162,6 +166,10 @@ SpotifyApiAccess::buildPlaylistData(const std::string& playlistID)
         // }
         // std::cout << std::endl;
         iteration++;
+
+        tracksLoaded += requestCountLimit;
+        *progressTracker = static_cast<float>(tracksLoaded) / static_cast<float>(total);
+        *progressTracker = 0.9f * std::min(*progressTracker, 1.0f);
     }
     while(!r_json["next"].is_null());
 
@@ -175,6 +183,19 @@ json SpotifyApiAccess::getAlbum(const std::string& albumId)
         cpr::Url(queryUrl),
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
     return json::parse(r.text);
+}
+
+std::optional<std::string> SpotifyApiAccess::checkPlaylistExistance(std::string_view id)
+{
+    cpr::Response r = cpr::Get(
+        cpr::Url("https://api.spotify.com/v1/playlists/" + std::string(id) + "?fields=name"),
+        cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
+    if(r.status_code == 200)
+    {
+        return json::parse(r.text)["name"].get<std::string>();
+    }
+    // handle case of Api timeout, not every non 200 code means playlist doesnt exist
+    return {};
 }
 
 void SpotifyApiAccess::stopPlayback()

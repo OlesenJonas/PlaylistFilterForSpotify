@@ -4,6 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <future>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -22,10 +24,20 @@ void resizeCallback(GLFWwindow* window, int w, int h);
 class App
 {
   public:
+    static enum State { LOG_IN, PL_SELECT, MAIN };
     App();
     ~App();
 
     void run();
+    void runLogIn();
+    void runPLSelect();
+    void runMain();
+
+    void loadSelectedPlaylist();
+
+    void extractPlaylistIDFromInput();
+    std::optional<std::string> checkPlaylistID(std::string_view id);
+
     bool pinTrack(Track* track);
     bool startTrackPlayback(const std::string& trackId);
     bool stopPlayback();
@@ -36,6 +48,11 @@ class App
 
     // todo: make private, add get and/or set
 
+    // playlist ids are always 22 characters long, but user could input a full URL
+    // with potentially multiple query parameters
+    std::array<char, 200> playlistIDInput{};
+    std::string_view playlistID = "";
+    std::optional<std::string> playlistStatus;
     std::vector<Track> playlist;
     std::vector<Track*> playlistTracks;
     std::vector<Track*> filteredTracks;
@@ -55,6 +72,12 @@ class App
     bool graphingDirty = false;
 
     int recommendAccuracy = 1;
+
+    // App State
+    State state = LOG_IN;
+    bool loadingPlaylist = false;
+    float loadPlaylistProgress = 0.0f;
+    std::future<void> doneLoading;
 
   private:
     bool shouldClose();
