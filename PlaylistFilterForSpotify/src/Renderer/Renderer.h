@@ -94,7 +94,7 @@ class Renderer
     GLuint debugLinesVAO;
     std::vector<glm::vec3> gridPoints;
     ShaderProgram minimalShaderProgram;
-    ShaderProgram minimalColorShader;
+    ShaderProgram minimalVertexColorShader;
     ShaderProgram trackShader;
     ShaderProgram lineShader;
     float logoAspect = 1.0f;

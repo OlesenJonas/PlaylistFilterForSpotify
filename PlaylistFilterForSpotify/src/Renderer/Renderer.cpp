@@ -108,7 +108,7 @@ Renderer::Renderer(App& a) : app(a)
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
         {EXECUTABLE_PATH "/Shaders/Minimal/minimal.vert", EXECUTABLE_PATH "/Shaders/Minimal/minimal.frag"});
 
-    minimalColorShader = ShaderProgram(
+    minimalVertexColorShader = ShaderProgram(
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
         {EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.vert",
          EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.frag"});
@@ -583,7 +583,7 @@ void Renderer::drawMain()
     glBindVertexArray(debugLinesVAO);
     glDrawArrays(GL_LINES, 0, debugLinesPointBufferSize);
 
-    minimalColorShader.UseProgram();
+    minimalVertexColorShader.UseProgram();
     // glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0)));
     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(*(cam.getView())));
     glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(*(cam.getProj())));
