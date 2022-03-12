@@ -69,8 +69,8 @@ void App::runLogIn()
 }
 void App::runPLSelect()
 {
-    // renderer.drawPLSelect();
-    state = State::MAIN;
+    renderer.drawPLSelect();
+    // state = State::MAIN;
 }
 void App::runMain()
 {
@@ -112,6 +112,32 @@ void App::runMain()
         renderer.rebuildBuffer();
         graphingDirty = false;
     }
+}
+
+void App::extractPlaylistIDFromInput()
+{
+    std::string_view input = &playlistIDInput[0];
+    if(input.size() == 22)
+    {
+        playlistID = input;
+    }
+    else
+    {
+        auto res = input.find("/playlist/");
+        if(res != std::string_view::npos)
+        {
+            playlistID = {&playlistIDInput[res + 10], 22};
+        }
+        else
+        {
+            playlistID = "";
+        }
+    }
+}
+
+std::optional<std::string> App::checkPlaylistID(std::string_view id)
+{
+    return apiAccess.checkPlaylistExistance(id);
 }
 
 bool App::pinTrack(Track* track)

@@ -99,6 +99,7 @@ class Renderer
     ShaderProgram lineShader;
     float logoAspect = 1.0f;
     GLuint spotifyLogoHandle;
+    GLuint loadingSpiralHandle;
 
     bool show_demo_window = true;
     bool show_another_window = false;

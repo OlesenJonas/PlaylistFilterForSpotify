@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 #include <string>
 
 #include <cpr/cpr.h>
@@ -23,7 +24,10 @@ class SpotifyApiAccess
 
     std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
     buildPlaylistData(const std::string& playlistID);
+
     json getAlbum(const std::string& albumId);
+
+    std::optional<std::string> checkPlaylistExistance(std::string_view id);
 
     // todo: not void, handle errors (especially if no device found because inactive!)
 
