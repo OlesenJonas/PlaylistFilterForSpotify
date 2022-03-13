@@ -97,6 +97,10 @@ message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
 find_package(GLFW3 REQUIRED)
 message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
 
+# CRYPTOPP
+find_package(CRYPTOPP REQUIRED)
+message(STATUS "Found CRYPTOPP in ${CRYPTOPP_INCLUDE_DIR}")
+
 # STB_IMAGE
 add_library(STB_IMAGE "src/thirdparty/stb_image.cpp")
 
@@ -110,7 +114,8 @@ FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
 FetchContent_MakeAvailable(cpr)
 
 # Put all libraries into a variable
-set(LIBS glfw3 opengl32 STB_IMAGE GLAD cpr::cpr)
+# set(LIBS glfw3 "cryptopp.lib" opengl32 STB_IMAGE GLAD cpr::cpr)
+set(LIBS glfw3 cryptopp opengl32 STB_IMAGE GLAD cpr::cpr)
 
 # Define the include DIRs
 include_directories(

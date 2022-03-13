@@ -27,7 +27,8 @@
 *.la
 *.a
 *.lib
-!glfw3.lib
+#except in lib folder
+!/PlaylistFilterForSpotify/lib/*
 
 # Executables
 *.exe

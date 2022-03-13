@@ -6,8 +6,6 @@
 # GLFW3_INCLUDE_DIR where to find glfw include files.
 # GLFW3_FOUND true if both the GLFW3_LIBRARY and GLFW3_INCLUDE_DIR have been found.
 
-#TODO: error if lib not found (with message: download binaries and place them in lib...)
-
 set( _glfw3_HEADER_SEARCH_DIRS "${CMAKE_SOURCE_DIR}/include")
 set( _glfw3_LIB_SEARCH_DIRS "${CMAKE_SOURCE_DIR}/lib")
 
