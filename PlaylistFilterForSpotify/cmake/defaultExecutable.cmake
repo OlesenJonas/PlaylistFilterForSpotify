@@ -15,8 +15,3 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ADDITIONAL_FILE
 
 # Define the link libraries
 target_link_libraries(${PROJECT_NAME} ${LIBS})
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD    # Adds a post-build event to MyTest
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different  		# which executes "cmake - E copy_if_different..."
-        "${CMAKE_SOURCE_DIR}/lib/cryptopp.dll"      	# <--this is in-file
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>)                 		# <--this is out-file path
