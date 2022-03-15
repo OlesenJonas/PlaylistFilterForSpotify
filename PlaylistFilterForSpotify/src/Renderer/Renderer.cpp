@@ -557,7 +557,9 @@ void Renderer::drawMain()
             GLuint albumCoverHandle;
             glGenTextures(1, &albumCoverHandle);
             glTextureView(
-                albumCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 2, layerToLoadInto, 1);
+                albumCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, layerToLoadInto, 1);
+            glTextureParameteri(albumCoverHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(albumCoverHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
             stbi_image_free(tli.data);
             // add entry to table
