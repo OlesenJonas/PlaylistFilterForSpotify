@@ -56,8 +56,9 @@ class App
 
   public:
     // todo: make private, add get and/or set
-    // std::vector since input size can vary greatly, so we need resizing
-    std::vector<char> userInput = std::vector<char>(200);
+    // this has to hold a potentially huge URL, and dynamically resizing
+    // using ImGui Callback from input didnt work (there was a bug somewhere, made request crash)
+    std::array<char, 1000> userInput;
     std::string_view playlistID = "";
     std::optional<std::string> playlistStatus;
     std::vector<Track> playlist;

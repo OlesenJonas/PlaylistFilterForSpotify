@@ -370,13 +370,14 @@ void Renderer::drawLogIn()
     ImGui::TextUnformatted("URL:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-    ImGui::InputText(
-        "##accessURL",
-        app.userInput.data(),
-        app.userInput.size(),
-        ImGuiInputTextFlags_CallbackResize,
-        ImGui::resizeUserInputVector,
-        &app.userInput);
+    // ImGui::InputText(
+    //     "##accessURL",
+    //     app.userInput.data(),
+    //     app.userInput.size(),
+    //     ImGuiInputTextFlags_CallbackResize,
+    //     ImGui::resizeUserInputVector,
+    //     &app.userInput);
+    ImGui::InputText("##accessURL", app.userInput.data(), app.userInput.size());
     ImGui::Dummy({0, scaleByDPI(1.0f)});
     if(ImGui::Button("Log in using URL"))
     {

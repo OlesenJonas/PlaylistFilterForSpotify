@@ -55,7 +55,6 @@ void App::runLogIn()
     if(userLoggedIn)
     {
         state = State::PL_SELECT;
-        userInput.resize(200);
         std::fill(userInput.begin(), userInput.end(), '\0');
     }
 }
