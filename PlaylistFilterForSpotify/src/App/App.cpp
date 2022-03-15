@@ -4,7 +4,13 @@
 #include <chrono>
 #include <future>
 #include <random>
+#include <string_view>
 #include <unordered_set>
+
+#ifdef _WIN32
+    #include <shellapi.h>
+    #include <windows.h>
+#endif
 
 App::App()
     : renderer(*this), pinnedTracksTable(*this, pinnedTracks), filteredTracksTable(*this, filteredTracks)
@@ -45,8 +51,13 @@ void App::run()
 
 void App::runLogIn()
 {
-    // renderer.drawLogIn();
-    state = State::PL_SELECT;
+    renderer.drawLogIn();
+    if(userLoggedIn)
+    {
+        state = State::PL_SELECT;
+        userInput.resize(200);
+        std::fill(userInput.begin(), userInput.end(), '\0');
+    }
 }
 
 void App::runPLSelect()
@@ -107,6 +118,47 @@ void App::runMain()
     }
 }
 
+void App::requestAuth()
+{
+    std::string url = apiAccess.getAuthURL();
+#ifdef _WIN32
+    ShellExecute(nullptr, nullptr, url.c_str(), nullptr, nullptr, SW_SHOW);
+#else
+    #error open (default) webbrowser with given URL
+#endif
+}
+
+bool App::checkAuth()
+{
+    const std::string_view input{&userInput[0]};
+    if(input.find("?error") != std::string_view::npos)
+    {
+        return false;
+    }
+
+    auto statePos = input.find("&state=");
+    if(statePos == std::string_view::npos)
+    {
+        return false;
+    }
+    // state is last parameter in url, dont need size param. Just use rest of string til \0
+    std::string_view state{&input[statePos + 7]};
+
+    auto codePos = input.find("?code=");
+    if(codePos == std::string_view::npos)
+    {
+        return false;
+    }
+    std::string_view code{&input[codePos + 6], statePos - (codePos + 6)};
+
+    bool authPassed = apiAccess.checkAuth(std::string{state}, std::string{code});
+    if(authPassed)
+    {
+        userLoggedIn = true;
+    }
+    return authPassed;
+}
+
 void App::loadSelectedPlaylist()
 {
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
@@ -127,7 +179,7 @@ void App::loadSelectedPlaylist()
 
 void App::extractPlaylistIDFromInput()
 {
-    std::string_view input = &playlistIDInput[0];
+    std::string_view input = &userInput[0];
     if(input.size() == 22)
     {
         playlistID = input;
@@ -137,7 +189,7 @@ void App::extractPlaylistIDFromInput()
         auto res = input.find("/playlist/");
         if(res != std::string_view::npos)
         {
-            playlistID = {&playlistIDInput[res + 10], 22};
+            playlistID = {&userInput[res + 10], 22};
         }
         else
         {

@@ -20,6 +20,9 @@ class SpotifyApiAccess
   public:
     SpotifyApiAccess();
 
+    std::string getAuthURL();
+    // have to pass as std::string :/ CPR Constructor takes only string not _view
+    bool checkAuth(const std::string& p_state, const std::string& code);
     void refreshAccessToken();
 
     std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>>
@@ -38,6 +41,11 @@ class SpotifyApiAccess
     // Get the Ids of track recommendations based on up to 5 input track Ids
     std::vector<std::string> getRecommendations(std::vector<std::string_view>& seedIds);
 
-    // is public for now, get/set would be trivial atm
+  private:
+    std::string state;
+    std::string code_verifier;
+
+    std::string userId;
+    std::string refresh_token;
     std::string access_token;
 };

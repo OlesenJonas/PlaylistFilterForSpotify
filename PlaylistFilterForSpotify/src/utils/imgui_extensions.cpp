@@ -1,6 +1,8 @@
 #include "imgui_extensions.h"
 #include "imgui/imgui.h"
 
+#include <vector>
+
 // size_arg (for each axis) < 0.0f: align to end, 0.0f: auto, > 0.0f: specified size
 void ImGui::HorizontalBar(
     float fraction_start, float fraction_end, const ImVec2& size_arg, const char* overlay)
@@ -302,4 +304,14 @@ int ImGui::PlotLines2D(
     // This is currently not exposed in the public API because we need a larger redesign of the whole thing,
     // but in the short-term we are making it available in PlotEx().
     return -1;
+}
+
+int ImGui::resizeUserInputVector(ImGuiInputTextCallbackData* data)
+{
+    std::vector<char>* vector = reinterpret_cast<std::vector<char>*>(data->UserData);
+    if(data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+    {
+        vector->resize(data->BufSize, '\0');
+    }
+    return 0;
 }

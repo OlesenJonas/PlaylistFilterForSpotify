@@ -25,4 +25,6 @@ namespace ImGui
     int PlotLines2D(
         const char* label, float** xValues, float** yValues, int* count, int datasets,
         const char* overlay_text, ImVec2 xRange, ImVec2 yRange, ImVec2 graphSize, ImU32* colors = nullptr);
+
+    int resizeUserInputVector(ImGuiInputTextCallbackData* data);
 }; // namespace ImGui

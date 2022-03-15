@@ -1,15 +1,101 @@
 #include "SpotifyApiAccess.h"
 #include "ShaderProgram/ShaderProgram.h"
+#include "Spotify/secrets.h"
 #include "cpr/body.h"
 #include "cpr/payload.h"
+#include "cpr/response.h"
 #include <cguid.h>
 #include <string>
 #include <tuple>
 
+#include <cryptopp/base64.h>
+#include <cryptopp/integer.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/sha.h>
+
 SpotifyApiAccess::SpotifyApiAccess()
 {
-    // todo: handle exception here aswell
-    refreshAccessToken();
+}
+
+std::string SpotifyApiAccess::getAuthURL()
+{
+    CryptoPP::AutoSeededRandomPool rng;
+    static constexpr std::string_view pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+
+    state.resize(10);
+    for(char& c : state)
+    {
+        const CryptoPP::Integer indxI(rng, 0, pool.size() - 1);
+        c = pool[indxI.ConvertToLong()];
+    }
+
+    const CryptoPP::Integer verifierLength(rng, 43, 128);
+    code_verifier.resize(verifierLength.ConvertToLong());
+
+    for(char& c : code_verifier)
+    {
+        const CryptoPP::Integer indxI(rng, 0, pool.size() - 1);
+        c = pool[indxI.ConvertToLong()];
+    }
+
+    CryptoPP::SHA256 hash;
+    hash.Update(reinterpret_cast<const CryptoPP::byte*>(code_verifier.data()), code_verifier.size());
+    std::vector<CryptoPP::byte> digest(hash.DigestSize());
+    hash.Final(digest.data());
+    std::string code_challenge;
+    CryptoPP::Base64URLEncoder encoder;
+    encoder.Put(digest.data(), digest.size());
+    encoder.MessageEnd();
+    code_challenge.resize(encoder.MaxRetrievable());
+    encoder.Get(reinterpret_cast<CryptoPP::byte*>(&code_challenge[0]), code_challenge.size());
+
+    return "https://accounts.spotify.com/authorize?" +                                         //
+           ("client_id=" + clientID +                                                          //
+            "&response_type=code" +                                                            //
+            "&redirect_uri=" + encodedRedirectURL +                                            //
+            "&state=" + state +                                                                //
+            "&scope=user-modify-playback-state%20user-library-read%20playlist-modify-private%" //
+            "20playlist-modify-public" +                                                       //
+            "&show_dialog=true" +                                                              //
+            "&code_challenge_method=S256" +                                                    //
+            "&code_challenge=" +
+            code_challenge);
+}
+
+bool SpotifyApiAccess::checkAuth(const std::string& p_state, const std::string& code)
+{
+    if(p_state != state)
+    {
+        return false;
+    }
+
+    std::string query = "https://accounts.spotify.com/api/token";
+    cpr::Response r = cpr::Post(
+        cpr::Url(query),
+        cpr::Payload{
+            {"grant_type", "authorization_code"},
+            {"code", code},
+            {"redirect_uri", redirectURL},
+            {"client_id", clientID},
+            {"code_verifier", code_verifier}},
+        cpr::Header{{"Authorization", "Basic " + base64}});
+    if(r.status_code != 200)
+    {
+        std::cout << r.text << std::endl;
+        return false;
+    }
+    json r_json = json::parse(r.text);
+    access_token = r_json["access_token"].get<std::string>();
+    refresh_token = r_json["refresh_token"].get<std::string>();
+
+    // get user id
+    r = cpr::Get(
+        cpr::Url("https://api.spotify.com/v1/me"),
+        cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
+    r_json = json::parse(r.text);
+    userId = r_json["id"].get<std::string>();
+
+    return true;
 }
 
 void SpotifyApiAccess::refreshAccessToken()
@@ -17,14 +103,9 @@ void SpotifyApiAccess::refreshAccessToken()
     const std::string query = "https://accounts.spotify.com/api/token";
     cpr::Response r = cpr::Post(
         cpr::Url(query),
-        cpr::Payload{{"grant_type", "refresh_token"}, {"refresh_token", refresh_token}},
+        cpr::Payload{
+            {"grant_type", "refresh_token"}, {"refresh_token", refresh_token}, {"client_id", clientID}},
         cpr::Header{{"Authorization", "Basic " + base64}});
-
-    // todo: check for response types (wrong access token, wrong request) first, instead of just throwing!
-    if(r.error.code != cpr::ErrorCode::OK)
-    {
-        throw UnknownApiError();
-    }
 
     auto r_json = json::parse(r.text);
 
@@ -48,9 +129,6 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
 
     // todo: could parallelize some of this (at least processing tracks from one request)
 
-    // todo: not sure which of these is correct (if encoding here is even needed, but _encode() function
-    // returns with \0 at end, so doesnt work), if error try utf8 encoded literal: u8", "
-    // const std::string nameSeparator = utf8_encode(L", ");
     const std::string nameSeparator = ", ";
     int requestCountLimit = 50;
     int iteration = 0;
@@ -70,7 +148,7 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
 
         // todo: check for response type (wrong access token, wrong request) first, instead of just throwing!
-        if(r.error.code != cpr::ErrorCode::OK)
+        if(r.status_code == 429)
         {
             throw UnknownApiError();
         }
@@ -242,7 +320,7 @@ void SpotifyApiAccess::createPlaylist(std::string_view name, const std::vector<s
     json body_json;
     body_json["name"] = name;
     body_json["public"] = false;
-    std::string queryUrl = "https://api.spotify.com/v1/users/" + user_id + "/playlists";
+    std::string queryUrl = "https://api.spotify.com/v1/users/" + userId + "/playlists";
     cpr::Response r = cpr::Post(
         cpr::Url(queryUrl),
         cpr::Header{{"Authorization", "Bearer " + access_token}, {"Content-Type", "application/json"}},
