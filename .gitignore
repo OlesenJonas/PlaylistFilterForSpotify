@@ -27,7 +27,10 @@
 *.la
 *.a
 *.lib
-!glfw3.lib
+#except glfw3.lib, thats small enough
+*glfw3.lib
+
+*.pdb
 
 # Executables
 *.exe

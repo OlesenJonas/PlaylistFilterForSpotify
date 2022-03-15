@@ -312,6 +312,94 @@ void Renderer::highlightWindow(const std::string& name)
 
 void Renderer::drawLogIn()
 {
+    glfwPollEvents();
+    // start imgui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // process time, or use ImGui's delatTime
+    double current_frame = glfwGetTime();
+    float delta_time = current_frame - last_frame;
+    last_frame = current_frame;
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    const ImGuiWindowFlags bgWindowFlags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
+                                           ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar;
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+    ImGui::Begin("bgWindow", nullptr, bgWindowFlags);
+    {
+        float fpsTextHeight = ImGui::GetTextLineHeightWithSpacing();
+        ImGui::SetCursorScreenPos(
+            ImVec2(scaleByDPI<float>(5), height - fpsTextHeight - scaleByDPI<float>(5)));
+        ImGui::Text(
+            "Application average %.3f ms/frame (%.1f FPS)",
+            1000.0f / ImGui::GetIO().Framerate,
+            ImGui::GetIO().Framerate);
+
+        const ImVec2 textSize = ImGui::CalcTextSize("All data provided by");
+        const ImVec2 padding(scaleByDPI(5.f), scaleByDPI(10.f));
+        const ImVec2 logoSize = {scaleByDPI(100.0f), scaleByDPI(100.0f * logoAspect)};
+        const ImVec2 start{width - padding.x, height - padding.y};
+        ImGui::SetCursorScreenPos({start.x - logoSize.x, start.y - logoSize.y});
+        ImGui::Image((void*)(intptr_t)(spotifyLogoHandle), logoSize);
+        ImGui::SetCursorScreenPos({start.x - textSize.x, start.y - fpsTextHeight - logoSize.y});
+        ImGui::TextUnformatted("All data provided by");
+    }
+    ImGui::End();
+
+    ImGui::SetNextWindowSize({60 * ImGui::CalcTextSize(u8"M").x, 0.f});
+    ImGui::Begin(
+        "LogIn",
+        nullptr,
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+    ImVec2 size = ImGui::GetWindowSize();
+    ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
+    ImGui::TextWrapped("The following button will redirect you to Spotify in order"
+                       "to give this application the necessary permissions. "
+                       "Afterwards you will be redirected to another URL. Please "
+                       "copy that URL and paste it into the following field.");
+    ImGui::Dummy({0, scaleByDPI(1.0f)});
+    if(ImGui::Button("Open Spotify"))
+    {
+        app.requestAuth();
+    }
+    ImGui::Dummy({0, scaleByDPI(1.0f)});
+    ImGui::TextUnformatted("URL:");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
+    // ImGui::InputText(
+    //     "##accessURL",
+    //     app.userInput.data(),
+    //     app.userInput.size(),
+    //     ImGuiInputTextFlags_CallbackResize,
+    //     ImGui::resizeUserInputVector,
+    //     &app.userInput);
+    ImGui::InputText("##accessURL", app.userInput.data(), app.userInput.size());
+    ImGui::Dummy({0, scaleByDPI(1.0f)});
+    if(ImGui::Button("Log in using URL"))
+    {
+        if(!app.checkAuth())
+        {
+            ImGui::OpenPopup("Login Error");
+        }
+    }
+    if(ImGui::BeginPopup("Login Error"))
+    {
+        ImGui::Text("Error logging in using that URL\nPlease try again");
+        ImGui::EndPopup();
+    }
+    ImGui::End();
+
+    ImGui::Render();
+
+    // Draw the Render Data into framebuffer
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Swap buffer
+    glfwSwapBuffers(window);
 }
 
 void Renderer::drawPLSelect()
@@ -377,7 +465,7 @@ void Renderer::drawPLSelect()
             "just:\n- 37i9dQZF1DX4jP4eebSWR9");
         ImGui::PopStyleColor();
         ImGui::SetNextItemWidth(60 * ImGui::CalcTextSize(u8"M").x);
-        if(ImGui::InputText("##playlistInput", app.playlistIDInput.data(), app.playlistIDInput.size() - 1))
+        if(ImGui::InputText("##playlistInput", app.userInput.data(), app.userInput.size() - 1))
         {
             app.playlistStatus.reset();
             app.extractPlaylistIDFromInput();
@@ -479,8 +567,8 @@ void Renderer::drawMain()
         // generate new mipmaps now that new covers have been added
         glGenerateTextureMipmap(coverArrayHandle);
         // also need to regenerate TrackBuffer, so that new layer indices are uploaded to GPU aswell
-        // todo: dont need to re-fill full buffer, just update the indices -> add function that replaces just
-        // these parts
+        // todo: dont need to re-fill full buffer, just update the indices -> add function that replaces
+        // just these parts
         fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
     }
 
@@ -827,9 +915,9 @@ void Renderer::drawMain()
                     };
                     coversLoaded = 0;
                     // todo:
-                    // handle partially loaded covers (when loading cover earlier went wrong, or new tracks
-                    // were added (not yet included))
-                    // probably easiest to have a "isLoaded" flag as part of CoverInfo
+                    // handle partially loaded covers (when loading cover earlier went wrong, or new
+                    // tracks were added (not yet included)) probably easiest to have a "isLoaded" flag as
+                    // part of CoverInfo
                     for(std::pair<const std::string, CoverInfo>& entry : app.coverTable)
                     {
                         // skip the default texture entry

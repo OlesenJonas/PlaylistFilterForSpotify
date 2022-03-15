@@ -110,7 +110,8 @@ FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
 FetchContent_MakeAvailable(cpr)
 
 # Put all libraries into a variable
-set(LIBS glfw3 opengl32 STB_IMAGE GLAD cpr::cpr)
+# set(LIBS glfw3 "cryptopp.lib" opengl32 STB_IMAGE GLAD cpr::cpr)
+set(LIBS glfw3 debug cryptlibDebug optimized cryptlib opengl32 STB_IMAGE GLAD cpr::cpr)
 
 # Define the include DIRs
 include_directories(
