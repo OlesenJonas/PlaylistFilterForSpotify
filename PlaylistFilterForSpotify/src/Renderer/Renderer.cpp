@@ -109,12 +109,13 @@ Renderer::Renderer(App& a) : app(a)
 
     minimalColorShader = ShaderProgram(
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/Minimal/minimal.vert", EXECUTABLE_PATH "/Shaders/Minimal/minimal.frag"});
+        {EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.vert",
+         EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.frag"});
 
     minimalVertexColorShader = ShaderProgram(
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.vert",
-         EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.frag"});
+        {EXECUTABLE_PATH "/Shaders/MinimalVertexColor/minimalVertexColor.vert",
+         EXECUTABLE_PATH "/Shaders/MinimalVertexColor/minimalVertexColor.frag"});
 
     CoverGraphingShader = ShaderProgram(
         VERTEX_SHADER_BIT | GEOMETRY_SHADER_BIT | FRAGMENT_SHADER_BIT,
