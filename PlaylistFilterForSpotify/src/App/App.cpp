@@ -488,15 +488,6 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         if(hit.index != std::numeric_limits<uint32_t>::max())
         {
             renderer->selectedTrack = &(renderer->app.playlist)[hit.index];
-
-            // TODO: ifdef this out, when debugging selection isnt needed
-            std::vector<glm::vec3> newData = {worldN, worldF, debugHitP, resP};
-            glNamedBufferData(
-                renderer->debugLinesPointBuffer,
-                sizeof(glm::vec3) * newData.size(),
-                newData.data(),
-                GL_STATIC_DRAW);
-            renderer->debugLinesPointBufferSize = newData.size();
         }
     }
 }

@@ -166,23 +166,6 @@ Renderer::Renderer(App& a) : app(a)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-    glGenVertexArrays(1, &debugLinesVAO);
-    glBindVertexArray(debugLinesVAO);
-    GLuint debugLinesVBO;
-    glGenBuffers(1, &debugLinesVBO);
-    debugLinesPointBuffer = debugLinesVBO;
-    std::vector<glm::vec3> debugLinesPoints = {
-        {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {2.0f, 1.0f, 1.0f}};
-    debugLinesPointBufferSize = 4;
-    glBindBuffer(GL_ARRAY_BUFFER, debugLinesVBO);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(glm::vec3) * debugLinesPoints.size(),
-        debugLinesPoints.data(),
-        GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
     // Load Spotify Logo
     glGenTextures(1, &spotifyLogoHandle);
     glBindTexture(GL_TEXTURE_2D, spotifyLogoHandle);
@@ -657,18 +640,6 @@ void Renderer::drawMain()
     glDrawArrays(GL_LINES, 0, gridPoints.size());
 
     glDepthMask(GL_TRUE);
-    // Debugging selection raycast
-    //  clang-format off
-    glUniformMatrix4fv(
-        0,
-        1,
-        GL_FALSE,
-        glm::value_ptr(glm::translate(glm::vec3(-1.f, -1.f, -1.f)) * glm::scale(glm::vec3(2.f, 2.f, 2.f))));
-    // clang-format on
-    col = {0.0f, 0.5f, 0.0f, 1.0f};
-    glUniform4fv(4, 1, glm::value_ptr(col));
-    glBindVertexArray(debugLinesVAO);
-    glDrawArrays(GL_LINES, 0, debugLinesPointBufferSize);
 
     minimalVertexColorShader.UseProgram();
     // glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0)));

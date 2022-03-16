@@ -68,8 +68,6 @@ class Renderer
     float coverSize3D = 0.1f;
     Track* selectedTrack = nullptr;
 
-    GLuint debugLinesPointBuffer = 0;
-    int debugLinesPointBufferSize = 0;
     bool uiHidden = false;
 
   private:
