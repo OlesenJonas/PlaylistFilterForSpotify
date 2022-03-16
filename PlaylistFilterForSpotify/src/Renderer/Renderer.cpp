@@ -177,6 +177,23 @@ Renderer::Renderer(App& a) : app(a)
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    }
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(data);
+
+    // Load Spotify Icon
+    glGenTextures(1, &spotifyIconHandle);
+    glBindTexture(GL_TEXTURE_2D, spotifyIconHandle);
+    {
+        int x, y, components;
+        data = stbi_load(MISC_PATH "/Spotify_Icon_RGB_Green.png", &x, &y, &components, 0);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
         // should switch back to default (4?) ?
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
@@ -680,8 +697,7 @@ void Renderer::drawMain()
     ImGui::Begin("bgWindow", nullptr, bgWindowFlags);
     {
         float fpsTextHeight = ImGui::GetTextLineHeightWithSpacing();
-        ImGui::SetCursorScreenPos(
-            ImVec2(scaleByDPI<float>(5), height - fpsTextHeight - scaleByDPI<float>(5)));
+        ImGui::SetCursorScreenPos(ImVec2(scaleByDPI(5.0f), height - fpsTextHeight - scaleByDPI(5.0f)));
         ImGui::Text(
             "Application average %.3f ms/frame (%.1f FPS)",
             1000.0f / ImGui::GetIO().Framerate,
@@ -752,9 +768,6 @@ void Renderer::drawMain()
         }
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
         ImGui::Separator();
-        // todo:
-        // probably better to make this a contextual menu when right(or left) clicking a track in the
-        // 3d view saves akward mouse movement from center view to the side of the screen
         if(selectedTrack != nullptr)
         {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
@@ -770,19 +783,17 @@ void Renderer::drawMain()
             ImGui::SetCursorScreenPos(ImVec2(cursorPos.x, cursorPos.y));
             if(ImGui::IsItemHovered())
             {
-                ImVec2 textSize = ImGui::CalcTextSize(u8"▶");
-                ImGui::SetCursorScreenPos(ImVec2(
-                    cursorPos.x + (coverSize - textSize.x) * 0.5f,
-                    cursorPos.y + (coverSize - textSize.y) * 0.5f));
-                ImGui::Text(u8"▶");
+                float padFactor = 0.25f;
+                ImGui::SetCursorScreenPos(
+                    ImVec2(cursorPos.x + padFactor * coverSize, cursorPos.y + padFactor * coverSize));
+                float scaledCoverSize = (1.0f - 2.0f * padFactor) * coverSize;
+                ImGui::Image((void*)(intptr_t)(spotifyIconHandle), ImVec2(scaledCoverSize, scaledCoverSize));
             }
             else
             {
                 ImGui::Image(
                     (void*)(intptr_t)(selectedTrack->coverInfoPtr->id), ImVec2(coverSize, coverSize));
             }
-            // todo: look at recommendation rendering code, can simplify the layout of this
-            //  ImGui::SetCursorScreenPos(textStartPos);
             ImGui::SetCursorPos(textStartPos);
             // ImGui::TextUnformatted(selectedTrack->trackNameEncoded.c_str());
             ImGui::TextWrapped(selectedTrack->trackNameEncoded.c_str());

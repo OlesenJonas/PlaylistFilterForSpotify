@@ -98,6 +98,7 @@ class Renderer
     ShaderProgram CoverGraphingShader;
     float logoAspect = 1.0f;
     GLuint spotifyLogoHandle;
+    GLuint spotifyIconHandle;
     GLuint loadingSpiralHandle;
     const int coverSize = 40;
 };
