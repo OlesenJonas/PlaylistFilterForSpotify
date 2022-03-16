@@ -93,10 +93,9 @@ class Renderer
     GLuint gridVAO;
     GLuint debugLinesVAO;
     std::vector<glm::vec3> gridPoints;
-    ShaderProgram minimalShaderProgram;
+    ShaderProgram minimalColorShader;
     ShaderProgram minimalVertexColorShader;
-    ShaderProgram trackShader;
-    ShaderProgram lineShader;
+    ShaderProgram CoverGraphingShader;
     float logoAspect = 1.0f;
     GLuint spotifyLogoHandle;
     GLuint loadingSpiralHandle;

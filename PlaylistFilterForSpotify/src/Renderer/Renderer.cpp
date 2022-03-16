@@ -107,7 +107,7 @@ Renderer::Renderer(App& a) : app(a)
     glClearColor(.11, .11, .11, .11);
     glEnable(GL_DEPTH_TEST);
 
-    minimalShaderProgram = ShaderProgram(
+    minimalColorShader = ShaderProgram(
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
         {EXECUTABLE_PATH "/Shaders/Minimal/minimal.vert", EXECUTABLE_PATH "/Shaders/Minimal/minimal.frag"});
 
@@ -116,17 +116,11 @@ Renderer::Renderer(App& a) : app(a)
         {EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.vert",
          EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.frag"});
 
-    lineShader = ShaderProgram(
+    CoverGraphingShader = ShaderProgram(
         VERTEX_SHADER_BIT | GEOMETRY_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/Line/line.vert",
-         EXECUTABLE_PATH "/Shaders/Line/line.geom",
-         EXECUTABLE_PATH "/Shaders/Line/line.frag"});
-
-    trackShader = ShaderProgram(
-        VERTEX_SHADER_BIT | GEOMETRY_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/Track/track.vert",
-         EXECUTABLE_PATH "/Shaders/Track/track.geom",
-         EXECUTABLE_PATH "/Shaders/Track/track.frag"});
+        {EXECUTABLE_PATH "/Shaders/CoverGraphing/coverGraphing.vert",
+         EXECUTABLE_PATH "/Shaders/CoverGraphing/coverGraphing.geom",
+         EXECUTABLE_PATH "/Shaders/CoverGraphing/coverGraphing.frag"});
 
     glGenVertexArrays(1, &lineVAO);
     glBindVertexArray(lineVAO);
@@ -628,7 +622,7 @@ void Renderer::drawMain()
 
     glDepthMask(GL_FALSE);
     // uniform locations are explicity set in shader
-    minimalShaderProgram.UseProgram();
+    minimalColorShader.UseProgram();
     glm::vec4 col{0.5f, 0.5f, 0.5f, 1.0f};
     glUniform4fv(4, 1, glm::value_ptr(col));
     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(*(cam.getView())));
@@ -692,11 +686,11 @@ void Renderer::drawMain()
     glBindVertexArray(lineVAO);
     glDrawArrays(GL_LINES, 0, 6);
 
-    trackShader.UseProgram();
-    trackShader.setFloat("width", coverSize3D);
-    trackShader.setVec2("minMaxX", app.featureMinMaxValues[graphingFeature1]);
-    trackShader.setVec2("minMaxY", app.featureMinMaxValues[graphingFeature2]);
-    trackShader.setVec2("minMaxZ", app.featureMinMaxValues[graphingFeature3]);
+    CoverGraphingShader.UseProgram();
+    CoverGraphingShader.setFloat("width", coverSize3D);
+    CoverGraphingShader.setVec2("minMaxX", app.featureMinMaxValues[graphingFeature1]);
+    CoverGraphingShader.setVec2("minMaxY", app.featureMinMaxValues[graphingFeature2]);
+    CoverGraphingShader.setVec2("minMaxZ", app.featureMinMaxValues[graphingFeature3]);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(*(cam.getView())));
     glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(*(cam.getProj())));
