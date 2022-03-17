@@ -289,16 +289,19 @@ void SpotifyApiAccess::stopPlayback()
 }
 
 // todo: handle no active device found (cache last active?)
-void SpotifyApiAccess::startTrackPlayback(const std::string& trackId)
+bool SpotifyApiAccess::startTrackPlayback(const std::string& trackId)
 {
     // "load" the song into queue
     std::string queryUrl = "https://api.spotify.com/v1/me/player/queue?uri=spotify:track:" + trackId;
     cpr::Response r = cpr::Post(
         cpr::Url(queryUrl),
         cpr::Header{{"Authorization", "Bearer " + access_token}, {"Content-Type", "application/json"}});
-    // std::cout << r.text << std::endl;
+    if(r.status_code == 404)
+    {
+        return false;
+    }
 
-    // skip to that song
+    // skip to that song, starts plaback automatically it seems
     queryUrl = "https://api.spotify.com/v1/me/player/next";
     r = cpr::Post(
         cpr::Url(queryUrl),
@@ -312,6 +315,7 @@ void SpotifyApiAccess::startTrackPlayback(const std::string& trackId)
     //         {"Authorization", "Bearer " + apiAccess.access_token},
     //         {"Content-Type", "application/json"},
     //         {"Content-Length", "0"}});
+    return true;
 }
 
 void SpotifyApiAccess::createPlaylist(std::string_view name, const std::vector<std::string>& trackUris)

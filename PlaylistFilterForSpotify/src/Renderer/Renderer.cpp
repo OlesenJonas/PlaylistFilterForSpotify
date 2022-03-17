@@ -814,7 +814,8 @@ void Renderer::drawMain()
         ImGui::ShowDemoWindow(&show_demo_window);
 #endif
 
-        if(ImGui::Begin("Playlist Data", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        if(ImGui::Begin(
+               "Playlist Data", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
         {
             if(ImGui::Button("Stop Playback"))
             {
@@ -974,7 +975,34 @@ void Renderer::drawMain()
             }
             ImGui::End(); // Pin Recommendations Window
         }
+    } // ui hidden
+
+    if(app.showDeviceErrorWindow)
+    {
+        ImGui::SetNextWindowFocus();
+        ImGui::PushStyleColor(ImGuiCol_TitleBgActive, IM_COL32(180, 50, 50, 255));
+        ImGui::Begin(
+            "Device Error",
+            &app.showDeviceErrorWindow,
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+        ImGui::PopStyleColor();
+        ImGui::TextUnformatted("Warning:\n"
+                               "There's currently no active Spotify session!\n"
+                               "An inactive session can be refreshed by\n"
+                               "eg.: playing & pausing a track.\n");
+        ImGui::Separator();
+        ImGui::TextUnformatted("The Spotify desktop client can be downloaded from:");
+        if(ImGui::Button("spotify.com/download"))
+        {
+#ifdef _WIN32
+            ShellExecute(nullptr, nullptr, "https://spotify.com/download", nullptr, nullptr, SW_SHOW);
+#else
+    #error open (default) webbrowser with given URL
+#endif
+        }
+        ImGui::End();
     }
+
     // Create ImGui Render Data
     ImGui::Render();
 

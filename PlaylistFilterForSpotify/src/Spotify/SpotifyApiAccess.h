@@ -34,7 +34,7 @@ class SpotifyApiAccess
 
     // todo: not void, handle errors (especially if no device found because inactive!)
 
-    void startTrackPlayback(const std::string& trackUris);
+    bool startTrackPlayback(const std::string& trackId);
     void stopPlayback();
     void createPlaylist(std::string_view name, const std::vector<std::string>& trackUris);
 

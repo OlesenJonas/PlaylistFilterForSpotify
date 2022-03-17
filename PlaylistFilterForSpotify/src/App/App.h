@@ -81,6 +81,8 @@ class App
 
     int recommendAccuracy = 1;
 
+    bool showDeviceErrorWindow = false;
+
     // App State
     State state = LOG_IN;
     bool userLoggedIn = false;

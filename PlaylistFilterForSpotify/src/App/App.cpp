@@ -220,9 +220,12 @@ bool App::pinTrack(Track* track)
 
 bool App::startTrackPlayback(const std::string& trackId)
 {
-    apiAccess.startTrackPlayback(trackId);
-    // todo: handle request return codes
-    return true;
+    bool ret = apiAccess.startTrackPlayback(trackId);
+    if(!ret)
+    {
+        showDeviceErrorWindow = true;
+    }
+    return ret;
 }
 
 bool App::stopPlayback()
