@@ -27,4 +27,8 @@ namespace ImGui
         const char* overlay_text, ImVec2 xRange, ImVec2 yRange, ImVec2 graphSize, ImU32* colors = nullptr);
 
     int resizeUserInputVector(ImGuiInputTextCallbackData* data);
+
+    bool ImageHoverButton(
+        const char* str_id, ImTextureID defaultTex, ImTextureID hoverTex, float size,
+        float hoverScale = 1.0f);
 }; // namespace ImGui

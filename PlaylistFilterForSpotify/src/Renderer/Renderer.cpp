@@ -771,31 +771,19 @@ void Renderer::drawMain()
         if(selectedTrack != nullptr)
         {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            ImVec2 cursorPos = ImGui::GetCursorScreenPos();
             const float coverSize = scaleByDPI(64.0f);
-            if(ImGui::InvisibleButton("hiddenButtonSelected", ImVec2(coverSize, coverSize)))
+            if(ImGui::ImageHoverButton(
+                   "hiddenButtonSelected",
+                   reinterpret_cast<ImTextureID>(selectedTrack->coverInfoPtr->id),
+                   reinterpret_cast<ImTextureID>(spotifyIconHandle),
+                   coverSize,
+                   0.5f))
             {
                 app.startTrackPlayback(selectedTrack->id);
             }
-            ImVec2 afterImagePos = ImGui::GetCursorPos();
-            ImGui::SameLine();
-            ImVec2 textStartPos = ImGui::GetCursorPos();
-            ImGui::SetCursorScreenPos(ImVec2(cursorPos.x, cursorPos.y));
-            if(ImGui::IsItemHovered())
-            {
-                float padFactor = 0.25f;
-                ImGui::SetCursorScreenPos(
-                    ImVec2(cursorPos.x + padFactor * coverSize, cursorPos.y + padFactor * coverSize));
-                float scaledCoverSize = (1.0f - 2.0f * padFactor) * coverSize;
-                ImGui::Image((void*)(intptr_t)(spotifyIconHandle), ImVec2(scaledCoverSize, scaledCoverSize));
-            }
-            else
-            {
-                ImGui::Image(
-                    (void*)(intptr_t)(selectedTrack->coverInfoPtr->id), ImVec2(coverSize, coverSize));
-            }
             float maxTextSize = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMM").x;
-            ImGui::SetCursorPos(textStartPos);
+            // ImGui::SetCursorPos(textStartPos);
+            ImGui::SameLine();
             if(ImGui::BeginChild("Names##GraphingSettings", ImVec2(maxTextSize, coverSize)))
             {
                 ImGui::TextUnformatted(selectedTrack->trackNameEncoded.c_str());
@@ -806,7 +794,7 @@ void Renderer::drawMain()
             }
             ImGui::EndChild();
 
-            ImGui::SetCursorPos(afterImagePos);
+            // ImGui::SetCursorPos(afterImagePos);
             ImGui::SetNextItemWidth(coverSize);
             if(ImGui::Button("Pin Track"))
             {

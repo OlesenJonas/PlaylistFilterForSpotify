@@ -315,3 +315,27 @@ int ImGui::resizeUserInputVector(ImGuiInputTextCallbackData* data)
     }
     return 0;
 }
+
+bool ImGui::ImageHoverButton(
+    const char* str_id, ImTextureID defaultTex, ImTextureID hoverTex, float size, float hoverScale)
+{
+    bool ret = false;
+    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+    ret = ImGui::InvisibleButton(str_id, ImVec2(size, size));
+    ImVec2 afterImagePos = ImGui::GetCursorPos();
+    if(ImGui::IsItemHovered())
+    {
+        const float padding = (1.0f - hoverScale) * 0.5f * size;
+        ImGui::SetCursorScreenPos(ImVec2(cursorPos.x + padding, cursorPos.y + padding));
+        ImGui::Image(hoverTex, ImVec2(hoverScale * size, hoverScale * size));
+    }
+    else
+    {
+        ImGui::SetCursorScreenPos(cursorPos);
+        ImGui::Image(defaultTex, ImVec2(size, size));
+    }
+    ImGui::SetCursorScreenPos(cursorPos);
+    // Dummy, so that imgui state is the same as if only one full sized image was drawn
+    ImGui::Dummy({size, size});
+    return ret;
+}
