@@ -48,29 +48,28 @@ class Renderer
     }
 
     // todo: make private
+    App& app;
+
+    int graphingFeature1 = 0;
+    int graphingFeature2 = 1;
+    int graphingFeature3 = 2;
+
     // Window Settings
     GLFWwindow* window;
     int width = 1600;
     int height = 900;
     int window_off_x = 50;
     int window_off_y = 50;
-    int FONT_SIZE = 14;
-
-    Camera cam = Camera(static_cast<float>(width) / height);
     double mouse_x = static_cast<float>(width) / 2.0f;
     double mouse_y = static_cast<float>(height) / 2.0f;
+    Camera cam = Camera(static_cast<float>(width) / height);
 
-    int graphingFeature1 = 0;
-    int graphingFeature2 = 1;
-    int graphingFeature3 = 2;
-
-    App& app;
-
-    std::vector<TrackBufferElement> trackBuffer;
     float coverSize3D = 0.1f;
-    Track* selectedTrack = nullptr;
+    std::vector<TrackBufferElement> trackBuffer;
 
+    Track* selectedTrack = nullptr;
     bool uiHidden = false;
+
     GLuint spotifyIconHandle;
 
   private:
@@ -79,9 +78,10 @@ class Renderer
     void drawBackgroundWindow();
     void fillTrackBuffer(int i1, int i2, int i3);
 
-    double last_frame;
-
+    int FONT_SIZE = 14;
     float dpiScale = 1.0f;
+
+    double last_frame;
 
     GLuint coverArrayHandle;
     GLuint coverArrayFreeIndex = 1;
@@ -92,16 +92,15 @@ class Renderer
     std::queue<TextureLoadInfo> coverLoadQueue;
 
     GLuint lineVAO;
+    GLuint lineVBO;
     GLuint trackVAO;
     GLuint trackVBO;
     GLuint gridVAO;
-    GLuint debugLinesVAO;
+    GLuint gridVBO;
     std::vector<glm::vec3> gridPoints;
     ShaderProgram minimalColorShader;
     ShaderProgram minimalVertexColorShader;
     ShaderProgram CoverGraphingShader;
     float logoAspect = 1.0f;
     GLuint spotifyLogoHandle;
-    GLuint loadingSpiralHandle;
-    const int coverSize = 40;
 };

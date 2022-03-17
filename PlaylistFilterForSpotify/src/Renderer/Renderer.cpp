@@ -125,7 +125,6 @@ Renderer::Renderer(App& a) : app(a)
 
     glGenVertexArrays(1, &lineVAO);
     glBindVertexArray(lineVAO);
-    GLuint lineVBO;
     glGenBuffers(1, &lineVBO);
     std::vector<glm::vec3> axisPoints = {
         // clang-format off
@@ -146,7 +145,6 @@ Renderer::Renderer(App& a) : app(a)
 
     glGenVertexArrays(1, &gridVAO);
     glBindVertexArray(gridVAO);
-    GLuint gridVBO;
     glGenBuffers(1, &gridVBO);
     const float subdiv = 10;
     for(int i = 0; i <= (int)subdiv; i++)
@@ -219,8 +217,20 @@ Renderer::Renderer(App& a) : app(a)
 
 Renderer::~Renderer()
 {
-    glDeleteTextures(1, &coverArrayHandle);
-    // todo: probably more stuff that i forgot to delete here (eg all buffers)
+    glDeleteTextures(1, &spotifyLogoHandle);
+    glDeleteTextures(1, &spotifyIconHandle);
+    glDeleteBuffers(1, &lineVBO);
+    glDeleteVertexArrays(1, &lineVAO);
+    glDeleteBuffers(1, &gridVBO);
+    glDeleteVertexArrays(1, &gridVAO);
+
+    // if the graphing elements were generated, delete them
+    if(app.state == App::State::MAIN)
+    {
+        glDeleteTextures(1, &coverArrayHandle);
+        glDeleteBuffers(1, &trackVBO);
+        glDeleteVertexArrays(1, &trackVAO);
+    }
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
