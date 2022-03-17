@@ -284,6 +284,50 @@ void Table<type>::draw()
                 ImGui::PopID();
             }
         }
+
+        if constexpr(type == TableType::Pinned)
+        {
+            // From: imgui_demo.cpp
+            int hovered_column = -1;
+            for(int column = 4; column < 14; column++)
+            {
+                ImGui::PushID(column);
+                if(ImGui::TableGetColumnFlags(column) & ImGuiTableColumnFlags_IsHovered)
+                {
+                    hovered_column = column;
+                }
+                if(hovered_column == column && !ImGui::IsAnyItemHovered() && ImGui::IsMouseReleased(1) &&
+                   !tracks.empty())
+                {
+                    ImGui::OpenPopup("ColumnFilterPopup");
+                }
+                if(ImGui::BeginPopup("ColumnFilterPopup"))
+                {
+                    if(ImGui::Button("Create Filter##perColumn"))
+                    {
+                        int featureIndex = column - 4;
+                        app.featureMinMaxValues[featureIndex] =
+                            glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min());
+                        for(const Track* trackPtr : app.pinnedTracks)
+                        {
+                            app.featureMinMaxValues[featureIndex].x = std::min(
+                                app.featureMinMaxValues[featureIndex].x, trackPtr->features[featureIndex]);
+                            app.featureMinMaxValues[featureIndex].y = std::max(
+                                app.featureMinMaxValues[featureIndex].y, trackPtr->features[featureIndex]);
+                        }
+                        app.filterDirty = true;
+                    }
+                    ImGui::Text(" based on values in column %s", columnHeaders[column].name.c_str());
+                    if(ImGui::Button("Close"))
+                    {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
+                ImGui::PopID();
+            }
+        }
+
         ImGui::EndTable();
         if(removeAfterFrame != -1)
         {

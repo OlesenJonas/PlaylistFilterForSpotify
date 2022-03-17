@@ -206,6 +206,7 @@ void App::resetFilterValues()
 {
     featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
     featureMinMaxValues[7] = {0, 300};
+    stringFilterBuffer.fill('\0');
 }
 
 bool App::pinTrack(Track* track)

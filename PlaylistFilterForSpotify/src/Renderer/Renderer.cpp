@@ -684,7 +684,7 @@ void Renderer::drawMain()
         IMGUI_ACTIVATE(ImGui::Combo("Z Axis Value", &graphingFeature3, comboNames), app.graphingDirty);
         ImGui::Separator();
         ImGui::TextUnformatted("Filter Playlist:");
-        ImGui::Text("Track or Artist name");
+        ImGui::Text("Track or Artist name (case sensitive)");
         if(ImGui::InputText("##filterInput", app.stringFilterBuffer.data(), app.stringFilterBuffer.size()))
         {
             app.filterDirty = true;
@@ -717,6 +717,12 @@ void Renderer::drawMain()
                 app.filterDirty = true;
             }
             ImGui::PopID();
+        }
+        ImGui::Dummy(ImVec2(0.0f, 1.0f));
+        if(ImGui::Button(u8"Reset all ↺"))
+        {
+            app.resetFilterValues();
+            app.filterDirty = true;
         }
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
         ImGui::Separator();
@@ -855,7 +861,7 @@ void Renderer::drawMain()
                     // todo: app.XYZ(vector<Track*> v) that fills filter
                     app.featureMinMaxValues.fill(
                         glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min()));
-                    for(const auto& trackPtr : app.pinnedTracks)
+                    for(const Track* trackPtr : app.pinnedTracks)
                     {
                         for(auto indx = 0; indx < trackPtr->features.size(); indx++)
                         {
@@ -939,7 +945,7 @@ void Renderer::drawMain()
         ImGui::Begin(
             "Device Error",
             &app.showDeviceErrorWindow,
-            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
         ImGui::PopStyleColor();
         ImGui::TextUnformatted("Warning:\n"
                                "There's currently no active Spotify session!\n"
