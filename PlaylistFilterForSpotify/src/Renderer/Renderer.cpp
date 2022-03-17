@@ -992,7 +992,7 @@ void Renderer::drawMain()
                                "An inactive session can be refreshed by\n"
                                "eg.: playing & pausing a track.\n");
         ImGui::Separator();
-        ImGui::TextUnformatted("The Spotify desktop client can be downloaded from:");
+        ImGui::TextUnformatted("The Spotify desktop client can be downloaded for free from:");
         if(ImGui::Button("spotify.com/download"))
         {
 #ifdef _WIN32
