@@ -547,49 +547,52 @@ void Renderer::drawMain()
     }
 
     // todo: move this into camera code (some update() func)
-    if(cam.mode == CAMERA_ORBIT)
+    if(!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByPopup))
     {
-        if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+        if(cam.mode == CAMERA_ORBIT)
+        {
+            if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+            {
+                double xPos = NAN;
+                double yPos = NAN;
+                glfwGetCursorPos(window, &xPos, &yPos);
+                auto dx = static_cast<float>(xPos - mouse_x);
+                auto dy = static_cast<float>(yPos - mouse_y);
+                if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+                    cam.move(glm::vec3(-dx * 0.005f, dy * 0.005f, 0.f));
+                else
+                    cam.rotate(dx, dy);
+
+                mouse_x = xPos;
+                mouse_y = yPos;
+            }
+        }
+        else if(cam.mode == CAMERA_FLY)
         {
             double xPos = NAN;
             double yPos = NAN;
             glfwGetCursorPos(window, &xPos, &yPos);
             auto dx = static_cast<float>(xPos - mouse_x);
             auto dy = static_cast<float>(yPos - mouse_y);
-            if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-                cam.move(glm::vec3(-dx * 0.005f, dy * 0.005f, 0.f));
-            else
-                cam.rotate(dx, dy);
-
             mouse_x = xPos;
             mouse_y = yPos;
-        }
-    }
-    else if(cam.mode == CAMERA_FLY)
-    {
-        double xPos = NAN;
-        double yPos = NAN;
-        glfwGetCursorPos(window, &xPos, &yPos);
-        auto dx = static_cast<float>(xPos - mouse_x);
-        auto dy = static_cast<float>(yPos - mouse_y);
-        mouse_x = xPos;
-        mouse_y = yPos;
-        cam.rotate(dx * 0.5f, -dy * 0.5f); // viewVector is flipped, angle diff reversed
+            cam.rotate(dx * 0.5f, -dy * 0.5f); // viewVector is flipped, angle diff reversed
 
-        glm::vec3 cam_move = glm::vec3(
-            static_cast<float>(
-                (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) -
-                (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)),
-            static_cast<float>(
-                (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) -
-                (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)),
-            static_cast<float>(
-                (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) -
-                (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)));
-        if(cam_move != glm::vec3(0.0f))
-            cam.move(2.0f * glm::normalize(cam_move) * io.DeltaTime);
+            glm::vec3 cam_move = glm::vec3(
+                static_cast<float>(
+                    (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) -
+                    (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)),
+                static_cast<float>(
+                    (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) -
+                    (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)),
+                static_cast<float>(
+                    (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) -
+                    (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)));
+            if(cam_move != glm::vec3(0.0f))
+                cam.move(2.0f * glm::normalize(cam_move) * io.DeltaTime);
+        }
+        cam.updateView();
     }
-    cam.updateView();
 
     float yoff = 2 * ((*cam.getView())[1][2] < 0) - 1;
     float zoff = 2 * ((*cam.getView())[2][2] < 0) - 1;

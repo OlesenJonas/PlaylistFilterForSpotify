@@ -413,8 +413,10 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
     if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        if(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+        if(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+        {
             return;
+        }
         double mx = 0;
         double my = 0;
         glfwGetCursorPos(window, &mx, &my);
