@@ -794,17 +794,17 @@ void Renderer::drawMain()
                 ImGui::Image(
                     (void*)(intptr_t)(selectedTrack->coverInfoPtr->id), ImVec2(coverSize, coverSize));
             }
+            float maxTextSize = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMM").x;
             ImGui::SetCursorPos(textStartPos);
-            // ImGui::TextUnformatted(selectedTrack->trackNameEncoded.c_str());
-            ImGui::TextWrapped(selectedTrack->trackNameEncoded.c_str());
-            ImGui::SetCursorPosX(textStartPos.x);
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-            // ImGui::TextUnformatted(selectedTrack->albumNameEncoded.c_str());
-            ImGui::TextWrapped(selectedTrack->albumNameEncoded.c_str());
-            ImGui::PopStyleColor();
-            ImGui::SetCursorPosX(textStartPos.x);
-            // ImGui::TextUnformatted(selectedTrack->artistsNamesEncoded.c_str());
-            ImGui::TextWrapped(selectedTrack->artistsNamesEncoded.c_str());
+            if(ImGui::BeginChild("Names##GraphingSettings", ImVec2(maxTextSize, coverSize)))
+            {
+                ImGui::TextUnformatted(selectedTrack->trackNameEncoded.c_str());
+                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
+                ImGui::TextUnformatted(selectedTrack->albumNameEncoded.c_str());
+                ImGui::PopStyleColor();
+                ImGui::TextUnformatted(selectedTrack->artistsNamesEncoded.c_str());
+            }
+            ImGui::EndChild();
 
             ImGui::SetCursorPos(afterImagePos);
             ImGui::SetNextItemWidth(coverSize);
