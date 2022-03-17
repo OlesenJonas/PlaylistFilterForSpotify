@@ -305,7 +305,7 @@ void Renderer::highlightWindow(const std::string& name)
     ImGui::SetWindowFocus(name.c_str());
 }
 
-void Renderer::drawLogIn()
+void Renderer::startFrame()
 {
     glfwPollEvents();
     // start imgui frame
@@ -319,7 +319,21 @@ void Renderer::drawLogIn()
     last_frame = current_frame;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
+void Renderer::endFrame()
+{
+    ImGui::Render();
+
+    // Draw the Render Data into framebuffer
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Swap buffer
+    glfwSwapBuffers(window);
+}
+
+void Renderer::drawBackgroundWindow()
+{
     const ImGuiWindowFlags bgWindowFlags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
                                            ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar;
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
@@ -344,6 +358,13 @@ void Renderer::drawLogIn()
         ImGui::TextUnformatted("All data provided by");
     }
     ImGui::End();
+}
+
+void Renderer::drawLogIn()
+{
+    startFrame();
+
+    drawBackgroundWindow();
 
     ImGui::SetNextWindowSize({60 * ImGui::CalcTextSize(u8"M").x, 0.f});
     ImGui::Begin(
@@ -388,62 +409,32 @@ void Renderer::drawLogIn()
     }
     ImGui::End();
 
-    ImGui::Render();
-
-    // Draw the Render Data into framebuffer
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Swap buffer
-    glfwSwapBuffers(window);
+    endFrame();
 }
 
 void Renderer::drawPLSelect()
 {
-    glfwPollEvents();
-    // start imgui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    startFrame();
 
-    // process time, or use ImGui's delatTime
-    double current_frame = glfwGetTime();
-    float delta_time = current_frame - last_frame;
-    last_frame = current_frame;
+    drawBackgroundWindow();
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    const ImGuiWindowFlags bgWindowFlags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
-                                           ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar;
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
-    ImGui::Begin("bgWindow", nullptr, bgWindowFlags);
+    if(app.loadingPlaylist)
     {
-        float fpsTextHeight = ImGui::GetTextLineHeightWithSpacing();
-        ImGui::SetCursorScreenPos(
-            ImVec2(scaleByDPI<float>(5), height - fpsTextHeight - scaleByDPI<float>(5)));
-        ImGui::Text(
-            "Application average %.3f ms/frame (%.1f FPS)",
-            1000.0f / ImGui::GetIO().Framerate,
-            ImGui::GetIO().Framerate);
-
-        const ImVec2 textSize = ImGui::CalcTextSize("All data provided by");
-        const ImVec2 padding(scaleByDPI(5.f), scaleByDPI(10.f));
-        const ImVec2 logoSize = {scaleByDPI(100.0f), scaleByDPI(100.0f * logoAspect)};
-        const ImVec2 start{width - padding.x, height - padding.y};
-        ImGui::SetCursorScreenPos({start.x - logoSize.x, start.y - logoSize.y});
-        ImGui::Image((void*)(intptr_t)(spotifyLogoHandle), logoSize);
-        ImGui::SetCursorScreenPos({start.x - textSize.x, start.y - fpsTextHeight - logoSize.y});
-        ImGui::TextUnformatted("All data provided by");
-
-        if(app.loadingPlaylist)
+        ImGui::Begin(
+            "##PlaylistLoading",
+            nullptr,
+            ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
+                ImGuiWindowFlags_NoScrollbar);
         {
+            ImVec2 size = ImGui::GetWindowSize();
+            ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
             const float barWidth = static_cast<float>(width) / 3.0f;
             const float barHeight = scaleByDPI(30.0f);
-            ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
+            // ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
             ImGui::HorizontalBar(0.0f, app.loadPlaylistProgress, {barWidth, barHeight});
         }
+        ImGui::End();
     }
-    ImGui::End();
 
     if(!app.loadingPlaylist)
     {
@@ -495,27 +486,13 @@ void Renderer::drawPLSelect()
         }
         ImGui::End();
     }
-    ImGui::Render();
 
-    // Draw the Render Data into framebuffer
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Swap buffer
-    glfwSwapBuffers(window);
+    endFrame();
 }
 
 void Renderer::drawMain()
 {
-    glfwPollEvents();
-    // start imgui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // process time, or use ImGui's delatTime
-    double current_frame = glfwGetTime();
-    float delta_time = current_frame - last_frame;
-    last_frame = current_frame;
+    startFrame();
 
     // get ImGui's IO for eventual checks
     ImGuiIO& io = ImGui::GetIO();
@@ -614,9 +591,6 @@ void Renderer::drawMain()
     }
     cam.updateView();
 
-    // clear last frame
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     float yoff = 2 * ((*cam.getView())[1][2] < 0) - 1;
     float zoff = 2 * ((*cam.getView())[2][2] < 0) - 1;
     float xoff = 2 * ((*cam.getView())[0][2] < 0) - 1;
@@ -690,29 +664,7 @@ void Renderer::drawMain()
     glBindVertexArray(trackVAO);
     glDrawArrays(GL_POINTS, 0, trackBuffer.size());
 
-    const ImGuiWindowFlags bgWindowFlags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
-                                           ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar;
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
-    ImGui::Begin("bgWindow", nullptr, bgWindowFlags);
-    {
-        float fpsTextHeight = ImGui::GetTextLineHeightWithSpacing();
-        ImGui::SetCursorScreenPos(ImVec2(scaleByDPI(5.0f), height - fpsTextHeight - scaleByDPI(5.0f)));
-        ImGui::Text(
-            "Application average %.3f ms/frame (%.1f FPS)",
-            1000.0f / ImGui::GetIO().Framerate,
-            ImGui::GetIO().Framerate);
-
-        const ImVec2 textSize = ImGui::CalcTextSize("All data provided by");
-        const ImVec2 padding(scaleByDPI(5.f), scaleByDPI(10.f));
-        const ImVec2 logoSize = {scaleByDPI(100.0f), scaleByDPI(100.0f * logoAspect)};
-        const ImVec2 start{width - padding.x, height - padding.y};
-        ImGui::SetCursorScreenPos({start.x - logoSize.x, start.y - logoSize.y});
-        ImGui::Image((void*)(intptr_t)(spotifyLogoHandle), logoSize);
-        ImGui::SetCursorScreenPos({start.x - textSize.x, start.y - fpsTextHeight - logoSize.y});
-        ImGui::TextUnformatted("All data provided by");
-    }
-    ImGui::End();
+    drawBackgroundWindow();
 
     // SECTION: Graphing Settings
     static constexpr char* comboNames = Track::FeatureNamesData;
@@ -1005,12 +957,5 @@ void Renderer::drawMain()
         ImGui::End();
     }
 
-    // Create ImGui Render Data
-    ImGui::Render();
-
-    // Draw the Render Data into framebuffer
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Swap buffer
-    glfwSwapBuffers(window);
+    endFrame();
 }

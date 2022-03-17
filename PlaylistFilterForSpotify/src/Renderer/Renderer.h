@@ -74,6 +74,9 @@ class Renderer
     GLuint spotifyIconHandle;
 
   private:
+    void startFrame();
+    void endFrame();
+    void drawBackgroundWindow();
     void fillTrackBuffer(int i1, int i2, int i3);
 
     double last_frame;
