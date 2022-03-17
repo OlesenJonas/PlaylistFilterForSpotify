@@ -8,8 +8,6 @@
 // ShaderNames must be in order
 // Vertex, Tess_Control, Tess_Eval, Geometry, Fragment, Compute
 
-// TODO: delete and replace in repository
-// DEPRECATED: USE FUNCTIONS WITH NAME INSTEAD
 ShaderProgram::ShaderProgram(
     GLuint shader_mask, std::initializer_list<std::string> l, std::initializer_list<definePair> defines)
     : m_shaderMask(shader_mask), m_shaderPaths(l), m_defines(defines)

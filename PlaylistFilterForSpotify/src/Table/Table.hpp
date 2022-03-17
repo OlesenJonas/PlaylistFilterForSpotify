@@ -18,7 +18,6 @@ template <>
 class TableAttributes<TableType::Filtered>
 {
   protected:
-    // todo: not sure if static constexpr is correct/needed here
     static constexpr char* name = "Filtered Playlist Tracks";
     static constexpr char* lastColumnId = "##pin";
 };

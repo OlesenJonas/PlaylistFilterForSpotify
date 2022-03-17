@@ -420,7 +420,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         double mx = 0;
         double my = 0;
         glfwGetCursorPos(window, &mx, &my);
-        // TODO: put in func
+
         glm::mat4 invProj = glm::inverse(*(renderer->cam.getProj()));
         glm::mat4 invView = glm::inverse(*(renderer->cam.getView()));
         float screenX = 2.f * (static_cast<float>(mx) / renderer->width) - 1.f;

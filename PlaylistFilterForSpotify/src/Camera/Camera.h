@@ -2,8 +2,8 @@
 #define CAMERA_H
 
 #define _USE_MATH_DEFINES
-#include <math.h>
 #include <array>
+#include <math.h>
 #include <string>
 
 #include <glm/ext.hpp>
@@ -19,11 +19,6 @@
 /*
     TODO:
     look sensitivity, scroll sensitivity, pan sensitivity
-
-    //TODO: rething / restructure camera (and Camera-Editor relationship) from ground up
-    //      goal is to enable direct manipulation of rotation, position, target etc (directly) from UI
-    //      with all necessary updates happening automatically
-
 */
 
 class Camera

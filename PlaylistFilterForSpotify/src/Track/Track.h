@@ -10,8 +10,6 @@
 #include "CommonStructs/CommonStructs.h"
 #include <utils/utf.h>
 
-// todo: test storing both versions of strings for searching vs decoding inside searching funciton when needed
-// (memory vs speed)
 struct Track
 {
     Track(
