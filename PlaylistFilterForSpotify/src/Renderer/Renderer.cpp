@@ -767,7 +767,9 @@ void Renderer::drawMain()
 #endif
 
         if(ImGui::Begin(
-               "Playlist Data", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+               "Playlist Data | Tab to toggle window visibility",
+               nullptr,
+               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
         {
             if(ImGui::Button("Stop Playback"))
             {
