@@ -42,6 +42,7 @@ class App
 
     void resetFilterValues();
     bool pinTrack(Track* track);
+    void pinTracks(const std::vector<Track*>& tracks);
     bool startTrackPlayback(const std::string& trackId);
     bool stopPlayback();
     void createPlaylist(const std::vector<Track*>& tracks);

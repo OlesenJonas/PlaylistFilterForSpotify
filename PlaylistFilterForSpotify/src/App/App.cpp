@@ -219,6 +219,17 @@ bool App::pinTrack(Track* track)
     return false;
 }
 
+void App::pinTracks(const std::vector<Track*>& tracks)
+{
+    for(Track* track : tracks)
+    {
+        if(std::find(pinnedTracks.begin(), pinnedTracks.end(), track) == pinnedTracks.end())
+        {
+            pinnedTracks.push_back(track);
+        }
+    }
+}
+
 bool App::startTrackPlayback(const std::string& trackId)
 {
     bool ret = apiAccess.startTrackPlayback(trackId);

@@ -895,6 +895,11 @@ void Renderer::drawMain()
                 // todo: promt popup to ask for PL name
                 app.createPlaylist(app.filteredTracks);
             }
+            ImGui::SameLine(app.filteredTracksTable.width - scaleByDPI(80.f));
+            if(ImGui::Button("Pin all"))
+            {
+                app.pinTracks(app.filteredTracks);
+            }
         }
         ImGui::End(); // Playlist Data Window
 
