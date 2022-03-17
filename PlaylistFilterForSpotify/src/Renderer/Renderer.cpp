@@ -980,6 +980,7 @@ void Renderer::drawMain()
     if(app.showDeviceErrorWindow)
     {
         ImGui::SetNextWindowFocus();
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255));
         ImGui::PushStyleColor(ImGuiCol_TitleBgActive, IM_COL32(180, 50, 50, 255));
         ImGui::Begin(
             "Device Error",
@@ -1000,6 +1001,7 @@ void Renderer::drawMain()
     #error open (default) webbrowser with given URL
 #endif
         }
+        ImGui::PopStyleColor();
         ImGui::End();
     }
 
