@@ -71,6 +71,7 @@ class Renderer
     Track* selectedTrack = nullptr;
 
     bool uiHidden = false;
+    GLuint spotifyIconHandle;
 
   private:
     void fillTrackBuffer(int i1, int i2, int i3);
@@ -98,7 +99,6 @@ class Renderer
     ShaderProgram CoverGraphingShader;
     float logoAspect = 1.0f;
     GLuint spotifyLogoHandle;
-    GLuint spotifyIconHandle;
     GLuint loadingSpiralHandle;
     const int coverSize = 40;
 };

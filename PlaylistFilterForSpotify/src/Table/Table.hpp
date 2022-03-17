@@ -5,6 +5,7 @@
 
 #include "Track/Track.h"
 #include "imgui/imgui.h"
+#include "utils/imgui_extensions.h"
 
 class App;
 
@@ -225,25 +226,20 @@ void Table<type>::draw()
                     }
                     return "";
                 };
+                ImGui::Text("%d", tracks[row]->index + 1);
+
+                ImGui::TableSetColumnIndex(1);
                 constexpr auto hiddenPlayButtonId = hiddenPlayButtonIdGenerator();
-                if(ImGui::InvisibleButton(hiddenPlayButtonId, ImVec2(availReg.x, rowSize.y)))
+                if(ImGui::ImageHoverButton(
+                       hiddenPlayButtonId,
+                       reinterpret_cast<ImTextureID>(tracks[row]->coverInfoPtr->id),
+                       reinterpret_cast<ImTextureID>(app.getRenderer().spotifyIconHandle),
+                       coverSize,
+                       0.5f))
                 {
                     app.startTrackPlayback(tracks[row]->id);
                     app.lastPlayedTrack = tracks[row]->index;
                 }
-                ImGui::SetCursorScreenPos(ImVec2(cursorPos.x, cursorPos.y + rowTextOffset));
-                if(ImGui::IsItemHovered())
-                {
-                    ImGui::Text(u8"▶");
-                }
-                else
-                {
-                    ImGui::Text("%d", tracks[row]->index + 1);
-                }
-                // ImGui::SetCursorScreenPos(cursorPos);
-
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Image((void*)(intptr_t)(tracks[row]->coverInfoPtr->id), ImVec2(coverSize, coverSize));
 
                 ImGui::TableSetColumnIndex(2);
                 ImGui::Text("%s", tracks[row]->trackNameEncoded.c_str());

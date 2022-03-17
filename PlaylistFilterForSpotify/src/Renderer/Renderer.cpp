@@ -943,30 +943,17 @@ void Renderer::drawMain()
                     const auto& track = recommendation.track;
                     id++;
                     ImGui::PushID(id);
-                    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
-                    if(ImGui::InvisibleButton("hiddenButtonRecommended", ImVec2(coverSize, coverSize)))
+                    if(ImGui::ImageHoverButton(
+                           "hiddenButtonRecommended",
+                           reinterpret_cast<ImTextureID>(track->coverInfoPtr->id),
+                           reinterpret_cast<ImTextureID>(spotifyIconHandle),
+                           coverSize,
+                           0.5f))
                     {
                         app.startTrackPlayback(track->id);
                     }
-                    ImVec2 afterImagePos = ImGui::GetCursorPos();
-                    ImGui::SameLine();
-                    ImVec2 textStartPos = ImGui::GetCursorPos();
-                    ImGui::SetCursorScreenPos(ImVec2(cursorPos.x, cursorPos.y));
-                    if(ImGui::IsItemHovered())
-                    {
-                        ImVec2 textSize = ImGui::CalcTextSize(u8"▶");
-                        ImGui::SetCursorScreenPos(ImVec2(
-                            cursorPos.x + (coverSize - textSize.x) * 0.5f,
-                            cursorPos.y + (coverSize - textSize.y) * 0.5f));
-                        ImGui::Text(u8"▶");
-                    }
-                    else
-                    {
-                        ImGui::Image(
-                            (void*)(intptr_t)(track->coverInfoPtr->id), ImVec2(coverSize, coverSize));
-                    }
                     float maxTextSize = ImGui::CalcTextSize(u8"MMMMMMMMMMMMMMMMMMMMMMMMM").x;
-                    ImGui::SetCursorPos(textStartPos);
+                    ImGui::SameLine();
                     if(ImGui::BeginChild("Names", ImVec2(maxTextSize, coverSize)))
                     {
                         ImGui::TextUnformatted(track->trackNameEncoded.c_str());
@@ -983,7 +970,6 @@ void Renderer::drawMain()
                         app.pinTrack(track);
                     }
                     ImGui::PopID();
-                    ImGui::SetCursorPos(afterImagePos);
                 }
             }
             ImGui::End(); // Pin Recommendations Window
