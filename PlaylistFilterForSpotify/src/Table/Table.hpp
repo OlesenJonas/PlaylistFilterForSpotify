@@ -242,13 +242,13 @@ void Table<type>::draw()
                 }
 
                 ImGui::TableSetColumnIndex(2);
-                ImGui::Text("%s", tracks[row]->trackNameEncoded.c_str());
+                ImGui::TextUnformatted(tracks[row]->trackNameEncoded.c_str());
                 ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-                ImGui::Text("%s", tracks[row]->albumNameEncoded.c_str());
+                ImGui::TextUnformatted(tracks[row]->albumNameEncoded.c_str());
                 ImGui::PopStyleColor();
 
                 ImGui::TableSetColumnIndex(3);
-                ImGui::Text("%s", tracks[row]->artistsNamesEncoded.c_str());
+                ImGui::TextUnformatted(tracks[row]->artistsNamesEncoded.c_str());
 
                 for(int i = 4; i < 11; i++)
                 {
