@@ -15,7 +15,7 @@
 #include "Table/Table.hpp"
 #include "Track/Track.h"
 
-// todo: move into some InputHandler class
+// todo: move into some InputHandler file
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
@@ -24,7 +24,6 @@ void resizeCallback(GLFWwindow* window, int w, int h);
 class App
 {
   public:
-    static enum State { LOG_IN, PL_SELECT, MAIN };
     App();
     ~App();
 
@@ -55,32 +54,39 @@ class App
     Renderer renderer;
 
   public:
+    enum State
+    {
+        LOG_IN,
+        PL_SELECT,
+        MAIN
+    };
     // todo: make private, add get and/or set
     // this has to hold a potentially huge URL, and dynamically resizing
     // using ImGui Callback from input didnt work (there was a bug somewhere, made request crash)
     std::array<char, 1000> userInput;
+
+    // Info about the loaded playlist
     std::string_view playlistID = "";
     std::optional<std::string> playlistStatus;
     std::vector<Track> playlist;
     std::vector<Track*> playlistTracks;
-    std::vector<Track*> filteredTracks;
-    std::vector<Track*> pinnedTracks = {};
     std::unordered_map<std::string, CoverInfo> coverTable;
-    // todo: not sure if 100 is enough, change if needed (also need to adjust size in Imgui function)
+
+    // Variables for working with the playlist
     std::array<char, 100> stringFilterBuffer{};
     std::array<glm::vec2, Track::featureAmount> featureMinMaxValues;
+    std::vector<Track*> pinnedTracks = {};
     Table<TableType::Pinned> pinnedTracksTable;
+    std::vector<Track*> filteredTracks;
     Table<TableType::Filtered> filteredTracksTable;
-
+    int recommendAccuracy = 1;
     std::vector<Recommendation> recommendedTracks;
     bool showRecommendations = false;
-
-    int lastPlayedTrack = -1;
     bool filterDirty = false;
+
+    // Rendering related app state
     bool graphingDirty = false;
-
-    int recommendAccuracy = 1;
-
+    int lastPlayedTrack = -1;
     bool showDeviceErrorWindow = false;
 
     // App State
@@ -93,7 +99,5 @@ class App
   private:
     bool shouldClose();
 
-    // todo: this shouldnt instantly get a refresh token
-    //  instead it should be an "empty" object until it gets initialized with a userId etc
     SpotifyApiAccess apiAccess;
 };
