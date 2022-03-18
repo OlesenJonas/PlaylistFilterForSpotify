@@ -4,7 +4,8 @@ Useful for
 - selecting a group of tracks with similar style from a playlist that contains multiple types of music
   - based on Audio features
   - and/or Spotify recommendations
-- visualizing the audio properties of a playlist in 3D\
+- visualizing the audio properties of a playlist in 3D
+
 (These are my personal use-cases, and whats currently supported. For further features see: [WIP](#wip))\
 Requires Opengl 4.5 support (could definitly be downgraded to a lower version with some code changes)
 
