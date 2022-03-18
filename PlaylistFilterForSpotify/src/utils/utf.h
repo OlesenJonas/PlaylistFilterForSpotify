@@ -34,6 +34,6 @@ std::wstring utf8_decode(const SubstrType& str)
 
 #else
 
-UTF EN - / DECODING IMPLEMENTATION MISSING FOR OTHER PLATFORMS
+    #error UTF EN - / DECODING IMPLEMENTATION MISSING FOR OTHER PLATFORMS
 
 #endif
