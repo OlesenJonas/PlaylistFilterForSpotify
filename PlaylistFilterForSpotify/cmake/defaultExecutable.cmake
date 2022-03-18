@@ -15,3 +15,15 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ADDITIONAL_FILE
 
 # Define the link libraries
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+IF(CMAKE_BUILD_TYPE MATCHES Release)
+	# For release builds we want to put the shader sources and misc files in the executable folder
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD  
+		COMMAND ${CMAKE_COMMAND} -E copy_directory 		
+		"${CMAKE_SOURCE_DIR}/misc/"     
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/misc/")
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD  
+		COMMAND ${CMAKE_COMMAND} -E copy_directory 		
+		"${CMAKE_SOURCE_DIR}/src/Shaders"     
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/Shaders/") 
+ENDIF()

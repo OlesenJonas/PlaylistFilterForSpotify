@@ -78,8 +78,15 @@ file(GLOB_RECURSE HEADER_FILES
 list(FILTER SOURCE_FILES EXCLUDE REGEX ".*/_Executables/.*$") #exclude files from the specific executables' folders
 # message(STATUS ${SOURCE_FILES})
 
-add_compile_definitions(MISC_PATH="${CMAKE_SOURCE_DIR}/misc")
-add_compile_definitions(SHADERS_PATH="${CMAKE_SOURCE_DIR}/src/Shaders")
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+	add_compile_definitions(MISC_PATH="${CMAKE_SOURCE_DIR}/misc")
+	add_compile_definitions(SHADERS_PATH="${CMAKE_SOURCE_DIR}/src/Shaders")
+ELSEIF(CMAKE_BUILD_TYPE MATCHES Release)
+	add_compile_definitions(MISC_PATH="${CMAKE_BINARY_DIR}/out/release/misc")
+	add_compile_definitions(SHADERS_PATH="${CMAKE_BINARY_DIR}/out/release/Shaders")
+ELSE()
+	message(FATAL_ERROR "unknown BUILD_TYPE")
+ENDIF()
 
 # We need a CMAKE_DIR with some code to find external dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
