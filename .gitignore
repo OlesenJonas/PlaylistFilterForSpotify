@@ -27,8 +27,6 @@
 *.la
 *.a
 *.lib
-#except glfw3.lib, thats small enough
-*glfw3.lib
 
 *.pdb
 
