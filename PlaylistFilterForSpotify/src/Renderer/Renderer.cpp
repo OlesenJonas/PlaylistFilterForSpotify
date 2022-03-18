@@ -109,19 +109,18 @@ Renderer::Renderer(App& a) : app(a)
 
     minimalColorShader = ShaderProgram(
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.vert",
-         EXECUTABLE_PATH "/Shaders/MinimalColor/minimalColor.frag"});
+        {SHADERS_PATH "/MinimalColor/minimalColor.vert", SHADERS_PATH "/MinimalColor/minimalColor.frag"});
 
     minimalVertexColorShader = ShaderProgram(
         VERTEX_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/MinimalVertexColor/minimalVertexColor.vert",
-         EXECUTABLE_PATH "/Shaders/MinimalVertexColor/minimalVertexColor.frag"});
+        {SHADERS_PATH "/MinimalVertexColor/minimalVertexColor.vert",
+         SHADERS_PATH "/MinimalVertexColor/minimalVertexColor.frag"});
 
     CoverGraphingShader = ShaderProgram(
         VERTEX_SHADER_BIT | GEOMETRY_SHADER_BIT | FRAGMENT_SHADER_BIT,
-        {EXECUTABLE_PATH "/Shaders/CoverGraphing/coverGraphing.vert",
-         EXECUTABLE_PATH "/Shaders/CoverGraphing/coverGraphing.geom",
-         EXECUTABLE_PATH "/Shaders/CoverGraphing/coverGraphing.frag"});
+        {SHADERS_PATH "/CoverGraphing/coverGraphing.vert",
+         SHADERS_PATH "/CoverGraphing/coverGraphing.geom",
+         SHADERS_PATH "/CoverGraphing/coverGraphing.frag"});
 
     glGenVertexArrays(1, &lineVAO);
     glBindVertexArray(lineVAO);

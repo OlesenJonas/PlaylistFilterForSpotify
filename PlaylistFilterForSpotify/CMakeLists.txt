@@ -79,6 +79,7 @@ list(FILTER SOURCE_FILES EXCLUDE REGEX ".*/_Executables/.*$") #exclude files fro
 # message(STATUS ${SOURCE_FILES})
 
 add_compile_definitions(MISC_PATH="${CMAKE_SOURCE_DIR}/misc")
+add_compile_definitions(SHADERS_PATH="${CMAKE_SOURCE_DIR}/src/Shaders")
 
 # We need a CMAKE_DIR with some code to find external dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
