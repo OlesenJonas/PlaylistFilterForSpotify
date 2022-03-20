@@ -24,7 +24,7 @@ Visualization Overview
 ---
 
 ### Building
-Builds using CMake tools in VSCode on Windows.\
+Builds using CMake Tools and Clang as compiler in VSCode on Windows.\
 Requires Crypto++ and glfw libraries in /lib/ (Optionally adjust CMake file to link them from elsewhere).\
 Clangd is setup for formatting (using clang-format) aswell as Autocomplete, Warnings etc.\
 Building from source requires you to provide your own Api Access through a "secrets.h" file in src/Spotify/. This file should define the following variables:
