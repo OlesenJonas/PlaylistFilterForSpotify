@@ -1,5 +1,3 @@
-#pragma once
-
 #include <cassert>
 #include <functional>
 
@@ -14,6 +12,7 @@ DynBitset& DynBitset::operator=(uint32_t val)
 {
     size = 32;
     internal.resize(1, val);
+    return *this;
 }
 DynBitset& DynBitset::operator=(uint64_t val)
 {
@@ -23,19 +22,20 @@ DynBitset& DynBitset::operator=(uint64_t val)
     internal.resize(2);
     internal[0] = first;
     internal[1] = second;
+    return *this;
 }
 
 DynBitset operator^(const DynBitset& lhs, const DynBitset& rhs)
 {
-    return DynBitset{lhs, rhs, std::bit_xor<uint32_t>()};
+    return DynBitset{lhs, rhs, std::bit_xor<>()};
 }
 DynBitset operator&(const DynBitset& lhs, const DynBitset& rhs)
 {
-    return DynBitset{lhs, rhs, std::bit_and<uint32_t>()};
+    return DynBitset{lhs, rhs, std::bit_and<>()};
 }
 DynBitset operator|(const DynBitset& lhs, const DynBitset& rhs)
 {
-    return DynBitset{lhs, rhs, std::bit_or<uint32_t>()};
+    return DynBitset{lhs, rhs, std::bit_or<>()};
 }
 
 DynBitset::operator bool() const
