@@ -4,6 +4,7 @@ Useful for
 - selecting a group of tracks with similar style from a playlist that contains multiple types of music
   - based on Audio features
   - and/or Spotify recommendations
+  - and/or the Artists' genres
 - visualizing the audio properties of a playlist in 3D
 
 (These are my personal use-cases, and whats currently supported. For further features see: [WIP](#wip))\
@@ -55,10 +56,8 @@ These are things I think are useful but are not implemented yet (and may never b
     thats how long they last currently, enough for me
   - api requests limit
 - Fuzzy-String comparisons for searching
-- Filtering based on Genre
 - Resize "Split" between both Tables
 - Loading more Font ranges (and a Font that supports them) (Arabic, Chinese, etc.)
 - Make loading the covers safer (currently pretty unsafe with .death()-ed threads, no guarantee they finish
 - Hide individual columns of the tables
-- Use comma to search for multiple strings
 - Better (looking) UI
