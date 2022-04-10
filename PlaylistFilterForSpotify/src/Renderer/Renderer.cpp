@@ -698,7 +698,7 @@ void Renderer::drawMain()
 
         ImGui::TextUnformatted("Filter Playlist:");
 
-        ImGui::TextUnformatted("Artist genres");
+        ImGui::TextUnformatted("Artist \"genres\"");
         ImGui::SameLine();
         ImGui::HelpMarker("Spotify does not offer genres per track. So this will only use the "
                           "genres assigned to any of the track's artists. As a result the filtering "

@@ -96,6 +96,13 @@ void App::runMain()
                     goto failedFilter;
                 }
             }
+            if(genreMask)
+            {
+                if(!(genreMask & track.genreMask))
+                {
+                    goto failedFilter;
+                }
+            }
             if(!s.empty())
             {
                 if(track.trackName.find(ws) == std::string::npos &&
