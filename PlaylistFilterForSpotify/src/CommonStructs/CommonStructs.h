@@ -5,6 +5,7 @@
 #include "imgui/imgui.h"
 #include <glm/ext.hpp>
 #include <string>
+#include <vector>
 
 struct Track;
 

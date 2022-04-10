@@ -6,6 +6,7 @@
 class DynBitset
 {
   public:
+    DynBitset() = default;
     explicit DynBitset(uint32_t _size);
 
     DynBitset& operator=(uint32_t val);
@@ -25,6 +26,7 @@ class DynBitset
     // todo: bitshift not yet implemented
 
     operator bool() const; // NOLINT
+    void clear();
     [[nodiscard]] bool getBit(uint32_t index) const;
     void setBit(uint32_t index);
     void clearBit(uint32_t index);

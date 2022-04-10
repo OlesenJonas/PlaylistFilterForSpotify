@@ -57,6 +57,10 @@ DynBitset::operator bool() const
     lastBits &= ((~0U) >> (32 - (size % 32)));
     return lastBits != 0U;
 }
+void DynBitset::clear()
+{
+    std::fill(internal.begin(), internal.end(), 0U);
+}
 bool DynBitset::getBit(uint32_t index) const
 {
     assert(index < size);

@@ -48,7 +48,7 @@ class App
     void createPlaylist(const std::vector<Track*>& tracks);
     void extendPinsByRecommendations();
 
-    const Renderer& getRenderer();
+    Renderer& getRenderer();
 
   private:
     // this needs to be first, so it gets initialized first
@@ -72,6 +72,8 @@ class App
     std::vector<Track> playlist;
     std::vector<Track*> playlistTracks;
     std::unordered_map<std::string, CoverInfo> coverTable;
+    std::vector<std::string> genres;
+    DynBitset genreMask;
 
     // Variables for working with the playlist
     std::array<char, 100> stringFilterBuffer{};

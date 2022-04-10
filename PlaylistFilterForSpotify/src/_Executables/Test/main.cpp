@@ -42,4 +42,10 @@ int main()
         a.toggleBit(23);
         assert(a.getFirstBitSet() == 33);
     }
+
+    {
+        DynBitset c;
+        assert(c.getInternal().empty());
+        assert(c.getSize() == 0);
+    }
 }
