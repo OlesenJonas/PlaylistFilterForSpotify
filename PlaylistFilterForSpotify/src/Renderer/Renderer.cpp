@@ -703,7 +703,7 @@ void Renderer::drawMain()
         ImGui::HelpMarker("Spotify does not offer genres per track. So this will only use the "
                           "genres assigned to any of the track's artists. As a result the filtering "
                           "may be less accurate.");
-        genreFilter.Draw("Filter genres");
+        genreFilter.Draw("Search genres");
         ImGui::SameLine();
         if(ImGui::Button("X##genreFilter"))
         {
@@ -735,13 +735,14 @@ void Renderer::drawMain()
             app.filterDirty = true;
         }
 
-        ImGui::Text("Track or Artist name (case sensitive)");
+        ImGui::Text("Track, Artist, Album name");
         if(app.stringFilter.Draw("##"))
         {
             app.filterDirty = true;
         }
         ImGui::SameLine();
-        if(ImGui::Button("X##text"))
+        if(ImGui::Button(u8"↺"
+                         "##text"))
         {
             app.stringFilter.Clear();
             app.filterDirty = true;
