@@ -736,14 +736,14 @@ void Renderer::drawMain()
         }
 
         ImGui::Text("Track or Artist name (case sensitive)");
-        if(ImGui::InputText("##filterInput", app.stringFilterBuffer.data(), app.stringFilterBuffer.size()))
+        if(app.stringFilter.Draw("##"))
         {
             app.filterDirty = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("X##text"))
         {
-            app.stringFilterBuffer.fill('\0');
+            app.stringFilter.Clear();
             app.filterDirty = true;
         }
         for(auto i = 0; i < Track::featureAmount; i++)

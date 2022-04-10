@@ -76,7 +76,7 @@ class App
     DynBitset genreMask;
 
     // Variables for working with the playlist
-    std::array<char, 100> stringFilterBuffer{};
+    ImGuiTextFilter stringFilter;
     std::array<glm::vec2, Track::featureAmount> featureMinMaxValues;
     std::vector<Track*> pinnedTracks = {};
     Table<TableType::Pinned> pinnedTracksTable;

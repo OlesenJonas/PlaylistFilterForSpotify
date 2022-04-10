@@ -83,8 +83,6 @@ void App::runMain()
     // todo: factor out into refreshFilter() method?
     if(filterDirty)
     {
-        std::string_view s(stringFilterBuffer.data());
-        std::wstring ws = utf8_decode(s);
         filteredTracks.clear();
         for(auto& track : playlist)
         {
@@ -103,10 +101,11 @@ void App::runMain()
                     goto failedFilter;
                 }
             }
-            if(!s.empty())
+            if(stringFilter.InputBuf[0] != 0)
             {
-                if(track.trackName.find(ws) == std::string::npos &&
-                   track.artistsNames.find(ws) == std::string::npos)
+                if(!stringFilter.PassFilter(track.artistsNamesEncoded.c_str()) &&
+                   !stringFilter.PassFilter(track.albumNameEncoded.c_str()) &&
+                   !stringFilter.PassFilter(track.trackNameEncoded.c_str()))
                 {
                     goto failedFilter;
                 }
@@ -215,7 +214,7 @@ void App::resetFilterValues()
 {
     featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
     featureMinMaxValues[7] = {0, 300};
-    stringFilterBuffer.fill('\0');
+    stringFilter.Clear();
 }
 
 bool App::pinTrack(Track* track)
