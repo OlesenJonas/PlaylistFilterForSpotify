@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "CommonStructs/CommonStructs.h"
+#include "DynamicBitset/DynamicBitset.h"
 #include <utils/utf.h>
 
 struct Track
@@ -49,6 +50,8 @@ struct Track
     std::array<float, featureAmount> features;
 
     CoverInfo* coverInfoPtr = nullptr;
+
+    DynBitset genreMask;
 };
 
 struct TrackSorter

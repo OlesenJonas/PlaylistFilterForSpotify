@@ -31,4 +31,9 @@ namespace ImGui
     bool ImageHoverButton(
         const char* str_id, ImTextureID defaultTex, ImTextureID hoverTex, float size,
         float hoverScale = 1.0f);
+
+    // from imgui_demo.cpp
+    void HelpMarker(const char* desc);
+    void HelpMarkerFromLastItem(const char* desc);
+
 }; // namespace ImGui

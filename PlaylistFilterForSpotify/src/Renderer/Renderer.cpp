@@ -695,7 +695,46 @@ void Renderer::drawMain()
         IMGUI_ACTIVATE(ImGui::Combo("Y Axis Value", &graphingFeature2, comboNames), app.graphingDirty);
         IMGUI_ACTIVATE(ImGui::Combo("Z Axis Value", &graphingFeature3, comboNames), app.graphingDirty);
         ImGui::Separator();
+
         ImGui::TextUnformatted("Filter Playlist:");
+
+        ImGui::TextUnformatted("Artist \"genres\"");
+        ImGui::SameLine();
+        ImGui::HelpMarker("Spotify does not offer genres per track. So this will only use the "
+                          "genres assigned to any of the track's artists. As a result the filtering "
+                          "may be less accurate.");
+        genreFilter.Draw("Filter genres");
+        ImGui::SameLine();
+        if(ImGui::Button("X##genreFilter"))
+        {
+            genreFilter.Clear();
+        }
+        ImGui::HelpMarkerFromLastItem("Reset filter");
+        if(ImGui::BeginChild(
+               "##genreSelectionChild",
+               ImVec2(size.x - 2.0f * ImGui::GetStyle().WindowPadding.x, scaleByDPI(125.0f)),
+               true))
+        {
+            for(uint32_t i = 0; i < app.genres.size(); i++)
+            {
+                if(genreFilter.PassFilter(app.genres[i].c_str()))
+                {
+                    const bool isSelected = app.genreMask.getBit(i);
+                    if(ImGui::Selectable(app.genres[i].c_str(), isSelected))
+                    {
+                        app.genreMask.toggleBit(i);
+                        app.filterDirty = true;
+                    }
+                }
+            }
+        }
+        ImGui::EndChild();
+        if(ImGui::Button(u8"↺##genreFilter"))
+        {
+            app.genreMask.clear();
+            app.filterDirty = true;
+        }
+
         ImGui::Text("Track or Artist name (case sensitive)");
         if(ImGui::InputText("##filterInput", app.stringFilterBuffer.data(), app.stringFilterBuffer.size()))
         {
@@ -728,6 +767,7 @@ void Renderer::drawMain()
                 app.featureMinMaxValues[i] = {0.f, max};
                 app.filterDirty = true;
             }
+            ImGui::HelpMarkerFromLastItem("Reset filter");
             ImGui::PopID();
         }
         ImGui::Dummy(ImVec2(0.0f, 1.0f));

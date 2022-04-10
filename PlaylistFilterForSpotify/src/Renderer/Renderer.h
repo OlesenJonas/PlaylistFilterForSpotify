@@ -69,6 +69,7 @@ class Renderer
 
     Track* selectedTrack = nullptr;
     bool uiHidden = false;
+    ImGuiTextFilter genreFilter;
 
     GLuint spotifyIconHandle;
 

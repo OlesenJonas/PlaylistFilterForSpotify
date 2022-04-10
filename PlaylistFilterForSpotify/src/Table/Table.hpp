@@ -107,6 +107,7 @@ void Table<type>::calcHeaderWidth()
     {
         columnHeaders.push_back({name.data(), defaultColumnFlag, 0});
     }
+    columnHeaders.push_back({"Genres", noSortColumnFlag, 0});
     const int pad = app.getRenderer().scaleByDPI(10.0f);
     for(auto i = 4; i < columnHeaders.size(); i++)
     {
@@ -169,7 +170,7 @@ void Table<type>::draw()
         ImGui::Text("Total: %d", static_cast<int>(tracks.size()));
     }
     const ImVec2 outer_size = getTableSize();
-    if(ImGui::BeginTable(this->name, 14, flags, outer_size))
+    if(ImGui::BeginTable(this->name, columnHeaders.size() + 1, flags, outer_size))
     {
         ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
         for(const auto& header : columnHeaders)
@@ -242,8 +243,16 @@ void Table<type>::draw()
 
                 ImGui::TableSetColumnIndex(2);
                 ImGui::TextUnformatted(tracks[row]->trackNameEncoded.c_str());
+                if(ImGui::IsItemClicked())
+                {
+                    app.getRenderer().selectedTrack = tracks[row];
+                }
                 ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
                 ImGui::TextUnformatted(tracks[row]->albumNameEncoded.c_str());
+                if(ImGui::IsItemClicked())
+                {
+                    app.getRenderer().selectedTrack = tracks[row];
+                }
                 ImGui::PopStyleColor();
 
                 ImGui::TableSetColumnIndex(3);
@@ -262,6 +271,27 @@ void Table<type>::draw()
                 ImGui::Text("%.3f", tracks[row]->features[8]);
 
                 ImGui::TableSetColumnIndex(13);
+                if(ImGui::BeginCombo("##trackGenreCombo", "", ImGuiComboFlags_NoPreview))
+                {
+                    DynBitset temp = tracks[row]->genreMask;
+                    while(temp)
+                    {
+                        // todo: kind of inefficient, because the DynBitset -> Bool conversion already
+                        // iterates through all elements in bitset
+                        // so chcking as while-condition while also clearing all bits is super redundant
+                        uint32_t smallestIndex = temp.getFirstBitSet();
+                        temp.clearBit(smallestIndex);
+                        const bool isSelected = app.genreMask.getBit(smallestIndex);
+                        if(ImGui::Selectable(app.genres[smallestIndex].c_str(), isSelected))
+                        {
+                            app.genreMask.toggleBit(smallestIndex);
+                            app.filterDirty = true;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                ImGui::TableSetColumnIndex(14);
                 if constexpr(type == TableType::Pinned)
                 {
                     if(ImGui::Button("Unpin"))

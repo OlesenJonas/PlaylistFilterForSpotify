@@ -1,4 +1,5 @@
 #include "App.h"
+#include "DynamicBitset/DynamicBitset.h"
 #include "GLFW/glfw3.h"
 #include "Renderer/Renderer.h"
 #include <chrono>
@@ -17,6 +18,7 @@ App::App()
 {
     apiAccess = SpotifyApiAccess();
     resetFilterValues();
+    userInput.fill(0);
 }
 
 App::~App()
@@ -94,6 +96,13 @@ void App::runMain()
                     goto failedFilter;
                 }
             }
+            if(genreMask)
+            {
+                if(!(genreMask & track.genreMask))
+                {
+                    goto failedFilter;
+                }
+            }
             if(!s.empty())
             {
                 if(track.trackName.find(ws) == std::string::npos &&
@@ -162,10 +171,10 @@ void App::loadSelectedPlaylist()
 {
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
     // lambda can switch back if lambda refactored into function
-    std::tie(playlist, coverTable) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
+    std::tie(playlist, coverTable, genres) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
     // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
 
-    App* test = this;
+    genreMask = DynBitset(genres.size());
 
     playlistTracks = std::vector<Track*>(playlist.size());
     for(auto i = 0; i < playlist.size(); i++)
@@ -392,7 +401,7 @@ void App::extendPinsByRecommendations()
     renderer.highlightWindow("Pin Recommendations");
 };
 
-const Renderer& App::getRenderer()
+Renderer& App::getRenderer()
 {
     return renderer;
 };
