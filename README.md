@@ -60,4 +60,6 @@ These are things I think are useful but are not implemented yet (and may never b
 - Loading more Font ranges (and a Font that supports them) (Arabic, Chinese, etc.)
 - Make loading the covers safer (currently pretty unsafe with .death()-ed threads, no guarantee they finish
 - Hide individual columns of the tables
+- Option to sort genre selection by # of occurance (current solution) *or* active/inactive
+- Option to combine genres in different ways (currently track just needs to match *any* of the selected genres) but matching *all* genres could also be beneficial
 - Better (looking) UI
