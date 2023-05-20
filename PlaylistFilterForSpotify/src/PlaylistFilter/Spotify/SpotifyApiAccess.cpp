@@ -412,7 +412,7 @@ json SpotifyApiAccess::getAlbum(const std::string& albumId)
     return json::parse(r.text);
 }
 
-std::optional<std::string> SpotifyApiAccess::checkPlaylistExistance(std::string_view id)
+std::string SpotifyApiAccess::checkPlaylistExistance(std::string_view id)
 {
     cpr::Response r = cpr::Get(
         cpr::Url("https://api.spotify.com/v1/playlists/" + std::string(id) + "?fields=name"),
@@ -422,7 +422,7 @@ std::optional<std::string> SpotifyApiAccess::checkPlaylistExistance(std::string_
         return json::parse(r.text)["name"].get<std::string>();
     }
     // handle case of Api timeout, not every non 200 code means playlist doesnt exist
-    return {};
+    return "";
 }
 
 void SpotifyApiAccess::stopPlayback()

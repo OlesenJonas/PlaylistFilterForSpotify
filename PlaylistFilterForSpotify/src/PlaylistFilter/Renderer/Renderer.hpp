@@ -35,6 +35,7 @@ class Renderer
 
     void drawLogIn();
     void drawPLSelect();
+    void drawPLLoad();
     void drawMain();
 
     void buildRenderData();

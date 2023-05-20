@@ -43,6 +43,9 @@ void App::run()
         case State::PL_SELECT:
             runPLSelect();
             break;
+        case State::PL_LOAD:
+            runPLLoad();
+            break;
         case State::MAIN:
             runMain();
             break;
@@ -55,26 +58,23 @@ void App::run()
 void App::runLogIn()
 {
     renderer.drawLogIn();
-    if(userLoggedIn)
-    {
-        state = State::PL_SELECT;
-        std::fill(userInput.begin(), userInput.end(), '\0');
-    }
 }
 
 void App::runPLSelect()
 {
     renderer.drawPLSelect();
-    if(loadingPlaylist)
+}
+
+void App::runPLLoad()
+{
+    renderer.drawPLLoad();
+    std::future_status status = doneLoading.wait_for(std::chrono::seconds(0));
+    if(status == std::future_status::ready)
     {
-        std::future_status status = doneLoading.wait_for(std::chrono::seconds(0));
-        if(status == std::future_status::ready)
-        {
-            // can only upload to GPU from main thread, so this last step has to happen here
-            // to account for the extra "loading time" the progress bar in renderer.cpp only goes up to 90% :)
-            renderer.buildRenderData();
-            state = State::MAIN;
-        }
+        // can only upload to GPU from main thread, so this last step has to happen here
+        // to account for the extra "loading time" the progress bar in renderer.cpp only goes up to 90% :)
+        renderer.buildRenderData();
+        state = State::MAIN;
     }
 }
 
@@ -94,18 +94,18 @@ void App::runMain()
                     goto failedFilter;
                 }
             }
-            if(genreMask)
+            if(currentGenreMask)
             {
-                if(!(genreMask & track.genreMask))
+                if(!(currentGenreMask & track.genreMask))
                 {
                     goto failedFilter;
                 }
             }
-            if(stringFilter.InputBuf[0] != 0)
+            if(nameFilter.InputBuf[0] != 0)
             {
-                if(!stringFilter.PassFilter(track.artistsNamesEncoded.c_str()) &&
-                   !stringFilter.PassFilter(track.albumNameEncoded.c_str()) &&
-                   !stringFilter.PassFilter(track.trackNameEncoded.c_str()))
+                if(!nameFilter.PassFilter(track.artistsNamesEncoded.c_str()) &&
+                   !nameFilter.PassFilter(track.albumNameEncoded.c_str()) &&
+                   !nameFilter.PassFilter(track.trackNameEncoded.c_str()))
                 {
                     goto failedFilter;
                 }
@@ -158,22 +158,18 @@ bool App::checkAuth()
     }
     std::string_view code{&input[codePos + 6], statePos - (codePos + 6)};
 
-    bool authPassed = apiAccess.checkAuth(std::string{state}, std::string{code});
-    if(authPassed)
-    {
-        userLoggedIn = true;
-    }
-    return authPassed;
+    return apiAccess.checkAuth(std::string{state}, std::string{code});
 }
 
 void App::loadSelectedPlaylist()
 {
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
     // lambda can switch back if lambda refactored into function
-    std::tie(playlist, coverTable, genres) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
+    std::tie(playlist, coverTable, genreNames) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
     // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
 
-    genreMask = DynBitset(genres.size());
+    currentGenreMask = DynBitset(genreNames.size());
+    currentGenreMask.clear();
 
     playlistTracks = std::vector<Track*>(playlist.size());
     for(auto i = 0; i < playlist.size(); i++)
@@ -214,7 +210,7 @@ void App::resetFilterValues()
 {
     featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
     featureMinMaxValues[7] = {0, 300};
-    stringFilter.Clear();
+    nameFilter.Clear();
 }
 
 bool App::pinTrack(Track* track)

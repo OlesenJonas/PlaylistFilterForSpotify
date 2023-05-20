@@ -32,8 +32,12 @@ class SpotifyApiAccess
     buildPlaylistData(std::string_view playlistID, float* progressTracker);
     // get the Album json returned by the api
     json getAlbum(const std::string& albumId);
-    // check if a playlist with a given id exists (and is accessible to the user)
-    std::optional<std::string> checkPlaylistExistance(std::string_view id);
+    /*
+        check if a playlist with a given id exists (and is accessible to the user)
+        if it is, returns the name of the playlist
+        if it is not, returns the empty string
+    */
+    std::string checkPlaylistExistance(std::string_view id);
     // starts playback of the given song from the users active spotify session
     bool startTrackPlayback(const std::string& trackId);
     // stop the users current playback

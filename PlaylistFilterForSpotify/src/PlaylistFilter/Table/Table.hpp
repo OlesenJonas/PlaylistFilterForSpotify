@@ -279,10 +279,10 @@ void Table<type>::draw()
                         // so chcking as while-condition while also clearing all bits is super redundant
                         uint32_t smallestIndex = temp.getFirstBitSet();
                         temp.clearBit(smallestIndex);
-                        const bool isSelected = app.genreMask.getBit(smallestIndex);
-                        if(ImGui::Selectable(app.genres[smallestIndex].c_str(), isSelected))
+                        const bool isSelected = app.currentGenreMask.getBit(smallestIndex);
+                        if(ImGui::Selectable(app.genreNames[smallestIndex].c_str(), isSelected))
                         {
-                            app.genreMask.toggleBit(smallestIndex);
+                            app.currentGenreMask.toggleBit(smallestIndex);
                             app.filterDirty = true;
                         }
                     }

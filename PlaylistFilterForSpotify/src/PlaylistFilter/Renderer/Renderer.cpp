@@ -407,6 +407,11 @@ void Renderer::drawLogIn()
         {
             ImGui::OpenPopup("Login Error");
         }
+        else
+        {
+            app.state = App::State::PL_SELECT;
+            std::fill(app.userInput.begin(), app.userInput.end(), '\0');
+        }
     }
     if(ImGui::BeginPopup("Login Error"))
     {
@@ -424,74 +429,80 @@ void Renderer::drawPLSelect()
 
     drawBackgroundWindow();
 
-    if(app.loadingPlaylist)
+    ImGui::Begin(
+        "PlaylistSelection",
+        nullptr,
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+    ImVec2 size = ImGui::GetWindowSize();
+    ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
+    ImGui::TextUnformatted("Enter Playlist URL or ID");
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
+    ImGui::TextUnformatted("eg:\n"
+                           "- https://open.spotify.com/playlist/37i9dQZF1DX4jP4eebSWR9?si=427d9c1af97c4600\n"
+                           "or just:\n"
+                           "- 37i9dQZF1DX4jP4eebSWR9");
+    ImGui::PopStyleColor();
+    ImGui::SetNextItemWidth(60 * ImGui::CalcTextSize("M").x);
+    if(ImGui::InputText("##playlistInput", app.userInput.data(), app.userInput.size() - 1))
     {
-        ImGui::Begin(
-            "##PlaylistLoading",
-            nullptr,
-            ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
-                ImGuiWindowFlags_NoScrollbar);
-        {
-            ImVec2 size = ImGui::GetWindowSize();
-            ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
-            const float barWidth = static_cast<float>(width) / 3.0f;
-            const float barHeight = scaleByDPI(30.0f);
-            // ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
-            ImGui::HorizontalBar(0.0f, app.loadPlaylistProgress, {barWidth, barHeight});
-        }
-        ImGui::End();
-    }
-
-    if(!app.loadingPlaylist)
-    {
-        ImGui::Begin(
-            "PlaylistSelection",
-            nullptr,
-            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
-        ImVec2 size = ImGui::GetWindowSize();
-        ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
-        ImGui::TextUnformatted("Enter Playlist URL or ID");
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-        ImGui::TextUnformatted(
-            "eg:\n- https://open.spotify.com/playlist/37i9dQZF1DX4jP4eebSWR9?si=427d9c1af97c4600\nor "
-            "just:\n- 37i9dQZF1DX4jP4eebSWR9");
-        ImGui::PopStyleColor();
-        ImGui::SetNextItemWidth(60 * ImGui::CalcTextSize("M").x);
-        if(ImGui::InputText("##playlistInput", app.userInput.data(), app.userInput.size() - 1))
-        {
-            app.playlistStatus.reset();
-            app.extractPlaylistIDFromInput();
-            if(!app.playlistID.empty())
-            {
-                app.playlistStatus = app.checkPlaylistID(app.playlistID);
-            }
-        }
+        // todo: explicit "check" button instead of refreshing on each input action
+        app.playlistID.clear();
+        app.extractPlaylistIDFromInput();
         if(!app.playlistID.empty())
         {
-            if(app.playlistStatus.has_value())
+            // check if id is valid id
+            app.playlistName = app.apiAccess.checkPlaylistExistance(app.playlistID);
+        }
+    }
+    if(!app.playlistID.empty())
+    {
+        if(!app.playlistName.empty())
+        {
+            ImGui::Text("Playlist found: %s", app.playlistName.c_str());
+            if(ImGui::Button("Load Playlist##selection"))
             {
-                ImGui::Text("Playlist found: %s", app.playlistStatus.value().c_str());
-                if(ImGui::Button("Load Playlist##selection"))
-                {
-                    App* test = &app;
-                    app.loadingPlaylist = true;
-                    app.doneLoading = std::async(std::launch::async, &App::loadSelectedPlaylist, &app);
-                }
-            }
-            else
-            {
-                ImGui::Text(
-                    "No Playlist found with ID: %.*s\nMake sure you have the necessary permissions",
-                    static_cast<int>(app.playlistID.size()),
-                    app.playlistID.data());
+                app.state = App::State::PL_LOAD;
+                app.doneLoading = std::async(std::launch::async, &App::loadSelectedPlaylist, &app);
             }
         }
         else
         {
-            ImGui::TextUnformatted("No ID found in input!");
+            ImGui::Text(
+                "No Playlist found with ID: %.*s\nMake sure you have the necessary permissions to access the "
+                "playlist",
+                static_cast<int>(app.playlistID.size()),
+                app.playlistID.data());
         }
-        ImGui::End();
     }
+    else
+    {
+        ImGui::TextUnformatted("No ID found in input!");
+    }
+    ImGui::End();
+
+    endFrame();
+}
+
+void Renderer::drawPLLoad()
+{
+    startFrame();
+
+    drawBackgroundWindow();
+
+    ImGui::Begin(
+        "##PlaylistLoading",
+        nullptr,
+        ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoScrollbar);
+    {
+        ImVec2 size = ImGui::GetWindowSize();
+        ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
+        const float barWidth = static_cast<float>(width) / 3.0f;
+        const float barHeight = scaleByDPI(30.0f);
+        // ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
+        ImGui::HorizontalBar(0.0f, app.loadPlaylistProgress, {barWidth, barHeight});
+    }
+    ImGui::End();
 
     endFrame();
 }
@@ -697,14 +708,14 @@ void Renderer::drawMain()
                ImVec2(size.x - 2.0f * ImGui::GetStyle().WindowPadding.x, scaleByDPI(125.0f)),
                true))
         {
-            for(uint32_t i = 0; i < app.genres.size(); i++)
+            for(uint32_t i = 0; i < app.genreNames.size(); i++)
             {
-                if(genreFilter.PassFilter(app.genres[i].c_str()))
+                if(genreFilter.PassFilter(app.genreNames[i].c_str()))
                 {
-                    const bool isSelected = app.genreMask.getBit(i);
-                    if(ImGui::Selectable(app.genres[i].c_str(), isSelected))
+                    const bool isSelected = app.currentGenreMask.getBit(i);
+                    if(ImGui::Selectable(app.genreNames[i].c_str(), isSelected))
                     {
-                        app.genreMask.toggleBit(i);
+                        app.currentGenreMask.toggleBit(i);
                         app.filterDirty = true;
                     }
                 }
@@ -713,19 +724,19 @@ void Renderer::drawMain()
         ImGui::EndChild();
         if(ImGui::Button("↺##genreFilter"))
         {
-            app.genreMask.clear();
+            app.currentGenreMask.clear();
             app.filterDirty = true;
         }
 
         ImGui::Text("Track, Artist, Album name");
-        if(app.stringFilter.Draw("##"))
+        if(app.nameFilter.Draw("##"))
         {
             app.filterDirty = true;
         }
         ImGui::SameLine();
         if(ImGui::Button("↺##text"))
         {
-            app.stringFilter.Clear();
+            app.nameFilter.Clear();
             app.filterDirty = true;
         }
         for(auto i = 0; i < Track::featureAmount; i++)
