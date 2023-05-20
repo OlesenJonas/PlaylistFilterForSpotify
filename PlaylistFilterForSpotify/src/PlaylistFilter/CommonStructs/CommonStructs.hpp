@@ -15,8 +15,8 @@ struct TrackBufferElement
     glm::vec3 p;
     // index of album cover in cover array
     GLuint layer;
-    // need this index for selection, when raycasting against elements in this buffer
-    // todo: what is this "originalIndex" ??
+    // index in the original track vector. Needed for selection, when raycasting against elements in the track
+    // buffer
     GLuint originalIndex;
 };
 
@@ -30,7 +30,9 @@ struct ColumnHeader
 struct CoverInfo
 {
     std::string url;
+    // Layer index in the big cover array
     GLuint layer = 0;
+    // OpenGL handle of a texture view, covering just that single layer
     GLuint id;
 };
 

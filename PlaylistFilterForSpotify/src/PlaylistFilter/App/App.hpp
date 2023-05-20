@@ -18,14 +18,33 @@
 class App
 {
   public:
+    enum State
+    {
+        LOG_IN,
+        PLAYLIST_SELECT,
+        PLAYLIST_LOAD,
+        MAIN
+    };
+
     App();
     ~App();
 
     void run();
+
+    // todo: these should be private
     void runLogIn();
-    void runPLSelect();
-    void runPLLoad();
+    void createLogInUI();
+
+    void runPlaylistSelect();
+    void createPlaylistSelectUI();
+
+    void runPlaylistLoad();
+    void createPlaylistLoadUI();
+
     void runMain();
+    void createMainUI();
+
+    // ---
 
     void requestAuth();
     bool checkAuth();
@@ -39,25 +58,14 @@ class App
     bool pinTrack(Track* track);
     void pinTracks(const std::vector<Track*>& tracks);
     bool startTrackPlayback(const std::string& trackId);
-    bool stopPlayback();
     void createPlaylist(const std::vector<Track*>& tracks);
     void extendPinsByRecommendations();
 
     Renderer& getRenderer();
 
-  private:
     // this needs to be first, so it gets initialized first
-    //  todo: that shouldnt be the case!
+    //  (Table initialization needs ImGui calc width)
     Renderer renderer;
-
-  public:
-    enum State
-    {
-        LOG_IN,
-        PL_SELECT,
-        PL_LOAD,
-        MAIN
-    };
     // todo: make private, add get and/or set
 
     SpotifyApiAccess apiAccess;
@@ -88,15 +96,16 @@ class App
 
     std::vector<std::string> genreNames;
 
-    // Variables for filtering the playlist
+    // Filtering related variables
     DynBitset currentGenreMask;
+    ImGuiTextFilter genreFilter;
     ImGuiTextFilter nameFilter;
     std::array<glm::vec2, Track::featureAmount> featureMinMaxValues;
     bool filterDirty = false;
     std::vector<Track*> filteredTracks;
     Table<TableType::Filtered> filteredTracksTable;
 
-    // Variables for working with pinned tracks
+    // Pin related variables
     std::vector<Track*> pinnedTracks;
     Table<TableType::Pinned> pinnedTracksTable;
     int recommendAccuracy = 1;
@@ -104,14 +113,23 @@ class App
     bool showRecommendations = false;
 
     // Rendering related app state
+    bool uiHidden = false;
+    int graphingFeatureX = 0;
+    int graphingFeatureY = 1;
+    int graphingFeatureZ = 2;
+    float coverSize3D = 0.1f;
     bool graphingDirty = false;
     int lastPlayedTrack = -1;
     bool showDeviceErrorWindow = false;
+    Track* selectedTrack = nullptr;
 
     // App State
     State state = LOG_IN;
     float loadPlaylistProgress = 0.0f;
     std::future<void> doneLoading;
+    bool canLoadCovers = true;
+    int coversTotal;
+    int coversLoaded;
 
   private:
     bool shouldClose();

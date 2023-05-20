@@ -272,8 +272,10 @@ void Renderer::buildRenderData()
         entry.second.id = defaultCoverHandle;
     }
 
-    coversTotal = app.coverTable.size() - 1;
-    coversLoaded = coversTotal;
+    // todo: move into App code
+    app.coversTotal = app.coverTable.size() - 1;
+    // todo: forgot why this is set here, add reminder
+    app.coversLoaded = app.coversTotal;
 
     glGenVertexArrays(1, &trackVAO);
     glBindVertexArray(trackVAO);
@@ -291,7 +293,7 @@ void Renderer::buildRenderData()
 
 void Renderer::rebuildBuffer()
 {
-    fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
+    fillTrackBuffer(app.graphingFeatureX, app.graphingFeatureY, app.graphingFeatureZ);
 }
 
 void Renderer::fillTrackBuffer(int i1, int i2, int i3)
@@ -329,17 +331,6 @@ void Renderer::startFrame()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Renderer::endFrame()
-{
-    ImGui::Render();
-
-    // Draw the Render Data into framebuffer
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Swap buffer
-    glfwSwapBuffers(window);
-}
-
 void Renderer::drawBackgroundWindow()
 {
     const ImGuiWindowFlags bgWindowFlags = ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
@@ -367,192 +358,16 @@ void Renderer::drawBackgroundWindow()
     ImGui::End();
 }
 
-void Renderer::drawLogIn()
+void Renderer::drawUI()
 {
-    startFrame();
+    // Finalize UI
+    ImGui::Render();
 
-    drawBackgroundWindow();
-
-    ImGui::SetNextWindowSize({60 * ImGui::CalcTextSize("M").x, 0.f});
-    ImGui::Begin(
-        "LogIn",
-        nullptr,
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
-    ImVec2 size = ImGui::GetWindowSize();
-    ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
-    ImGui::TextWrapped("The following button will redirect you to Spotify in order"
-                       "to give this application the necessary permissions. "
-                       "Afterwards you will be redirected to another URL. Please "
-                       "copy that URL and paste it into the following field.");
-    ImGui::Dummy({0, scaleByDPI(1.0f)});
-    if(ImGui::Button("Open Spotify"))
-    {
-        app.requestAuth();
-    }
-    ImGui::Dummy({0, scaleByDPI(1.0f)});
-    ImGui::TextUnformatted("URL:");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-    // ImGui::InputText(
-    //     "##accessURL",
-    //     app.userInput.data(),
-    //     app.userInput.size(),
-    //     ImGuiInputTextFlags_CallbackResize,
-    //     ImGui::resizeUserInputVector,
-    //     &app.userInput);
-    ImGui::InputText("##accessURL", app.userInput.data(), app.userInput.size());
-    ImGui::Dummy({0, scaleByDPI(1.0f)});
-    if(ImGui::Button("Log in using URL"))
-    {
-        if(!app.checkAuth())
-        {
-            ImGui::OpenPopup("Login Error");
-        }
-        else
-        {
-            app.state = App::State::PL_SELECT;
-            std::fill(app.userInput.begin(), app.userInput.end(), '\0');
-        }
-    }
-    if(ImGui::BeginPopup("Login Error"))
-    {
-        ImGui::Text("Error logging in using that URL\nPlease try again");
-        ImGui::EndPopup();
-    }
-    ImGui::End();
-
-    endFrame();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void Renderer::drawPLSelect()
+void Renderer::draw3DGraph()
 {
-    startFrame();
-
-    drawBackgroundWindow();
-
-    ImGui::Begin(
-        "PlaylistSelection",
-        nullptr,
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
-    ImVec2 size = ImGui::GetWindowSize();
-    ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
-    ImGui::TextUnformatted("Enter Playlist URL or ID");
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-    ImGui::TextUnformatted("eg:\n"
-                           "- https://open.spotify.com/playlist/37i9dQZF1DX4jP4eebSWR9?si=427d9c1af97c4600\n"
-                           "or just:\n"
-                           "- 37i9dQZF1DX4jP4eebSWR9");
-    ImGui::PopStyleColor();
-    ImGui::SetNextItemWidth(60 * ImGui::CalcTextSize("M").x);
-    if(ImGui::InputText("##playlistInput", app.userInput.data(), app.userInput.size() - 1))
-    {
-        // todo: explicit "check" button instead of refreshing on each input action
-        app.playlistID.clear();
-        app.extractPlaylistIDFromInput();
-        if(!app.playlistID.empty())
-        {
-            // check if id is valid id
-            app.playlistName = app.apiAccess.checkPlaylistExistance(app.playlistID);
-        }
-    }
-    if(!app.playlistID.empty())
-    {
-        if(!app.playlistName.empty())
-        {
-            ImGui::Text("Playlist found: %s", app.playlistName.c_str());
-            if(ImGui::Button("Load Playlist##selection"))
-            {
-                app.state = App::State::PL_LOAD;
-                app.doneLoading = std::async(std::launch::async, &App::loadSelectedPlaylist, &app);
-            }
-        }
-        else
-        {
-            ImGui::Text(
-                "No Playlist found with ID: %.*s\nMake sure you have the necessary permissions to access the "
-                "playlist",
-                static_cast<int>(app.playlistID.size()),
-                app.playlistID.data());
-        }
-    }
-    else
-    {
-        ImGui::TextUnformatted("No ID found in input!");
-    }
-    ImGui::End();
-
-    endFrame();
-}
-
-void Renderer::drawPLLoad()
-{
-    startFrame();
-
-    drawBackgroundWindow();
-
-    ImGui::Begin(
-        "##PlaylistLoading",
-        nullptr,
-        ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoScrollbar);
-    {
-        ImVec2 size = ImGui::GetWindowSize();
-        ImGui::SetWindowPos(ImVec2(width / 2.0f - size.x / 2.0f, height / 2.0f - size.y / 2.0f));
-        const float barWidth = static_cast<float>(width) / 3.0f;
-        const float barHeight = scaleByDPI(30.0f);
-        // ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
-        ImGui::HorizontalBar(0.0f, app.loadPlaylistProgress, {barWidth, barHeight});
-    }
-    ImGui::End();
-
-    endFrame();
-}
-
-void Renderer::drawMain()
-{
-    startFrame();
-
-    // get ImGui's IO for eventual checks
-    ImGuiIO& io = ImGui::GetIO();
-
-    // upload new texture data if theyre ready
-    // could limit to a max amount per frame to keep frametimes more stable
-    if(!coverLoadQueue.empty())
-    {
-        std::lock_guard<std::mutex> lock(coverLoadQueueMutex);
-        while(!coverLoadQueue.empty())
-        {
-            TextureLoadInfo tli = coverLoadQueue.front();
-            coverLoadQueue.pop();
-            // create new texture
-            GLuint layerToLoadInto = coverArrayFreeIndex;
-            coverArrayFreeIndex += 1;
-            tli.ptr->layer = layerToLoadInto;
-
-            assert(tli.x <= 64 && tli.y <= 64 && "Cover Image larger than texture array dimensions");
-            assert(tli.data != nullptr && "Trying to upload freed data to the GPU?");
-            glTextureSubImage3D(
-                coverArrayHandle, 0, 0, 0, layerToLoadInto, tli.x, tli.y, 1, GL_RGB, GL_UNSIGNED_BYTE, tli.data);
-
-            GLuint albumCoverHandle;
-            glGenTextures(1, &albumCoverHandle);
-            glTextureView(albumCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, layerToLoadInto, 1);
-            glTextureParameteri(albumCoverHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTextureParameteri(albumCoverHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-            stbi_image_free(tli.data);
-            // add entry to table
-            tli.ptr->id = albumCoverHandle;
-            coversLoaded++;
-        }
-        // generate new mipmaps now that new covers have been added
-        glGenerateTextureMipmap(coverArrayHandle);
-        // also need to regenerate TrackBuffer, so that new layer indices are uploaded to GPU aswell
-        // todo: dont need to re-fill full buffer, just update the indices -> add function that replaces
-        // just these parts
-        fillTrackBuffer(graphingFeature1, graphingFeature2, graphingFeature3);
-    }
-
     // todo: move this into camera code (some update() func)
     if(!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByPopup))
     {
@@ -596,7 +411,7 @@ void Renderer::drawMain()
                     (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) -
                     (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)));
             if(cam_move != glm::vec3(0.0f))
-                cam.move(2.0f * glm::normalize(cam_move) * io.DeltaTime);
+                cam.move(2.0f * glm::normalize(cam_move) * ImGui::GetIO().DeltaTime);
         }
         cam.updateView();
     }
@@ -656,10 +471,10 @@ void Renderer::drawMain()
     glDrawArrays(GL_LINES, 0, 6);
 
     CoverGraphingShader.UseProgram();
-    CoverGraphingShader.setFloat("width", coverSize3D);
-    CoverGraphingShader.setVec2("minMaxX", app.featureMinMaxValues[graphingFeature1]);
-    CoverGraphingShader.setVec2("minMaxY", app.featureMinMaxValues[graphingFeature2]);
-    CoverGraphingShader.setVec2("minMaxZ", app.featureMinMaxValues[graphingFeature3]);
+    CoverGraphingShader.setFloat("width", app.coverSize3D);
+    CoverGraphingShader.setVec2("minMaxX", app.featureMinMaxValues[app.graphingFeatureX]);
+    CoverGraphingShader.setVec2("minMaxY", app.featureMinMaxValues[app.graphingFeatureY]);
+    CoverGraphingShader.setVec2("minMaxZ", app.featureMinMaxValues[app.graphingFeatureZ]);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(*(cam.getView())));
     glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(*(cam.getProj())));
@@ -669,345 +484,51 @@ void Renderer::drawMain()
 
     glBindVertexArray(trackVAO);
     glDrawArrays(GL_POINTS, 0, trackBuffer.size());
+}
 
-    drawBackgroundWindow();
+void Renderer::endFrame()
+{
+    // Swap buffer
+    glfwSwapBuffers(window);
+}
 
-    // SECTION: Graphing Settings
-    static constexpr char* comboNames = Track::FeatureNamesData;
-    ImGui::Begin(
-        "Graphing Settings",
-        nullptr,
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
+void Renderer::uploadAvailableCovers()
+{
+    // upload new texture data if theyre ready
+    // could limit to a max amount per frame to keep frametimes more stable
+    if(coverLoadQueue.empty())
+        return;
+
+    std::lock_guard<std::mutex> lock(coverLoadQueueMutex);
+    while(!coverLoadQueue.empty())
     {
-        auto size = ImGui::GetWindowSize();
-        ImGui::SetWindowPos(ImVec2(width - size.x, 0));
+        TextureLoadInfo tli = coverLoadQueue.front();
+        coverLoadQueue.pop();
+        // create new texture
+        GLuint layerToLoadInto = coverArrayFreeIndex;
+        coverArrayFreeIndex += 1;
+        tli.ptr->layer = layerToLoadInto;
 
-        ImGui::SliderFloat("Cover Size", &coverSize3D, 0.0f, 0.1f);
-        ImGui::Separator();
-        IMGUI_ACTIVATE(ImGui::Combo("X Axis Value", &graphingFeature1, comboNames), app.graphingDirty);
-        IMGUI_ACTIVATE(ImGui::Combo("Y Axis Value", &graphingFeature2, comboNames), app.graphingDirty);
-        IMGUI_ACTIVATE(ImGui::Combo("Z Axis Value", &graphingFeature3, comboNames), app.graphingDirty);
-        ImGui::Separator();
+        assert(tli.x <= 64 && tli.y <= 64 && "Cover Image larger than texture array dimensions");
+        assert(tli.data != nullptr && "Trying to upload freed data to the GPU?");
+        glTextureSubImage3D(
+            coverArrayHandle, 0, 0, 0, layerToLoadInto, tli.x, tli.y, 1, GL_RGB, GL_UNSIGNED_BYTE, tli.data);
 
-        ImGui::TextUnformatted("Filter Playlist:");
+        GLuint albumCoverHandle;
+        glGenTextures(1, &albumCoverHandle);
+        glTextureView(albumCoverHandle, GL_TEXTURE_2D, coverArrayHandle, GL_RGB8, 0, 3, layerToLoadInto, 1);
+        glTextureParameteri(albumCoverHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(albumCoverHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-        ImGui::TextUnformatted("Artist \"genres\"");
-        ImGui::SameLine();
-        ImGui::HelpMarker("Spotify does not offer genres per track. So this will only use the "
-                          "genres assigned to any of the track's artists. As a result the filtering "
-                          "may be less accurate.");
-        genreFilter.Draw("Search genres");
-        ImGui::SameLine();
-        if(ImGui::Button("X##genreFilter"))
-        {
-            genreFilter.Clear();
-        }
-        ImGui::HelpMarkerFromLastItem("Reset filter");
-        if(ImGui::BeginChild(
-               "##genreSelectionChild",
-               ImVec2(size.x - 2.0f * ImGui::GetStyle().WindowPadding.x, scaleByDPI(125.0f)),
-               true))
-        {
-            for(uint32_t i = 0; i < app.genreNames.size(); i++)
-            {
-                if(genreFilter.PassFilter(app.genreNames[i].c_str()))
-                {
-                    const bool isSelected = app.currentGenreMask.getBit(i);
-                    if(ImGui::Selectable(app.genreNames[i].c_str(), isSelected))
-                    {
-                        app.currentGenreMask.toggleBit(i);
-                        app.filterDirty = true;
-                    }
-                }
-            }
-        }
-        ImGui::EndChild();
-        if(ImGui::Button("↺##genreFilter"))
-        {
-            app.currentGenreMask.clear();
-            app.filterDirty = true;
-        }
-
-        ImGui::Text("Track, Artist, Album name");
-        if(app.nameFilter.Draw("##"))
-        {
-            app.filterDirty = true;
-        }
-        ImGui::SameLine();
-        if(ImGui::Button("↺##text"))
-        {
-            app.nameFilter.Clear();
-            app.filterDirty = true;
-        }
-        for(auto i = 0; i < Track::featureAmount; i++)
-        {
-            ImGui::PushID(i);
-            float max = i != 7 ? 1.0f : 300.0f;
-            float speed = i != 7 ? 0.001f : 1.0f;
-            ImGui::TextUnformatted(Track::FeatureNames[i].data());
-            IMGUI_ACTIVATE(
-                ImGui::DragFloatRange2(
-                    "Min/Max", &app.featureMinMaxValues[i].x, &app.featureMinMaxValues[i].y, speed, 0.0f, max),
-                app.filterDirty);
-            ImGui::SameLine();
-            if(ImGui::Button("↺"))
-            {
-                app.featureMinMaxValues[i] = {0.f, max};
-                app.filterDirty = true;
-            }
-            ImGui::HelpMarkerFromLastItem("Reset filter");
-            ImGui::PopID();
-        }
-        ImGui::Dummy(ImVec2(0.0f, 1.0f));
-        if(ImGui::Button("Reset all ↺"))
-        {
-            app.resetFilterValues();
-            app.filterDirty = true;
-        }
-        ImGui::Dummy(ImVec2(0.0f, 5.0f));
-        ImGui::Separator();
-        if(selectedTrack != nullptr)
-        {
-            ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            const float coverSize = scaleByDPI(64.0f);
-            if(ImGui::ImageHoverButton(
-                   "hiddenButtonSelected",
-                   reinterpret_cast<ImTextureID>(selectedTrack->coverInfoPtr->id),
-                   reinterpret_cast<ImTextureID>(spotifyIconHandle),
-                   coverSize,
-                   0.5f))
-            {
-                app.startTrackPlayback(selectedTrack->id);
-            }
-            float maxTextSize = ImGui::CalcTextSize("MMMMMMMMMMMMMMMMMMMMMMM").x;
-            // ImGui::SetCursorPos(textStartPos);
-            ImGui::SameLine();
-            if(ImGui::BeginChild("Names##GraphingSettings", ImVec2(maxTextSize, coverSize)))
-            {
-                ImGui::TextUnformatted(selectedTrack->trackNameEncoded.c_str());
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-                ImGui::TextUnformatted(selectedTrack->albumNameEncoded.c_str());
-                ImGui::PopStyleColor();
-                ImGui::TextUnformatted(selectedTrack->artistsNamesEncoded.c_str());
-            }
-            ImGui::EndChild();
-
-            // ImGui::SetCursorPos(afterImagePos);
-            ImGui::SetNextItemWidth(coverSize);
-            if(ImGui::Button("Pin Track"))
-            {
-                app.pinTrack(selectedTrack);
-            }
-        }
+        stbi_image_free(tli.data);
+        // add entry to table
+        tli.ptr->id = albumCoverHandle;
+        app.coversLoaded++;
     }
-    ImGui::End();
-
-    if(!uiHidden)
-    {
-
-#ifdef SHOW_IMGUI_DEMO_WINDOW
-        static bool show_demo_window = true;
-        static bool show_another_window = false;
-        static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-        ImGui::ShowDemoWindow(&show_demo_window);
-#endif
-
-        if(ImGui::Begin(
-               "Playlist Data | Tab to toggle window visibility",
-               nullptr,
-               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
-        {
-            if(ImGui::Button("Stop Playback"))
-            {
-                app.stopPlayback();
-            }
-            if(canLoadCovers)
-            {
-                ImGui::SameLine();
-                if(ImGui::Button("Load Covers"))
-                {
-                    canLoadCovers = false;
-                    auto getCoverData = [&](std::pair<const std::string, CoverInfo>& entry) -> void
-                    {
-                        // todo: error handling for all the requests
-                        TextureLoadInfo tli;
-                        tli.ptr = &entry.second;
-
-                        const std::string& imageUrl = entry.second.url;
-                        cpr::Response r = cpr::Get(cpr::Url(imageUrl));
-                        int temp;
-                        tli.data = stbi_load_from_memory(
-                            (unsigned char*)r.text.c_str(), r.text.size(), &tli.x, &tli.y, &temp, 3);
-
-                        std::lock_guard<std::mutex> lock(coverLoadQueueMutex);
-                        coverLoadQueue.push(tli);
-                    };
-                    coversLoaded = 0;
-                    // todo:
-                    // handle partially loaded covers (when loading cover earlier went wrong, or new
-                    // tracks were added (not yet included)) probably easiest to have a "isLoaded" flag as
-                    // part of CoverInfo
-                    for(std::pair<const std::string, CoverInfo>& entry : app.coverTable)
-                    {
-                        // skip the default texture entry
-                        if(entry.first != "")
-                        {
-                            // c++ cant guarantee that reference stays alive, need to explicitly wrap
-                            // as reference when passing to thread
-                            std::thread{getCoverData, std::ref(entry)}.detach();
-                        }
-                    }
-                }
-            }
-            if(coversLoaded != coversTotal)
-            {
-                ImGui::ProgressBar(static_cast<float>(coversLoaded) / coversTotal);
-            }
-            ImGui::Separator();
-
-            app.pinnedTracksTable.draw();
-            if(!app.pinnedTracks.empty())
-            {
-                if(ImGui::Button("Export to playlist##pins"))
-                {
-                    // todo: promt popup to ask for PL name
-                    app.createPlaylist(app.pinnedTracks);
-                }
-
-                // todo: un-hardcode these offsets (depend on text (-> button/sliders) sizes)
-                ImGui::SameLine(app.pinnedTracksTable.width - scaleByDPI(952.f));
-                if(ImGui::Button("Recommend tracks to pin"))
-                {
-                    app.extendPinsByRecommendations();
-                }
-                ImGui::SameLine(app.pinnedTracksTable.width - scaleByDPI(790.f));
-                ImGui::SetNextItemWidth(scaleByDPI(100.0f));
-                ImGui::SliderInt("Accuracy", &app.recommendAccuracy, 1, 5, "");
-                ImGui::SameLine();
-                ImGui::TextDisabled("(?)");
-                if(ImGui::IsItemHovered())
-                {
-                    ImGui::BeginTooltip();
-                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                    ImGui::TextUnformatted("Controls how accurate the recommendations will fit the pinned "
-                                           "tracks. Higher accuracy may give less results overall.");
-                    ImGui::PopTextWrapPos();
-                    ImGui::EndTooltip();
-                }
-
-                ImGui::SameLine(app.pinnedTracksTable.width - scaleByDPI(189.f));
-                if(ImGui::Button("Create filters from pinned tracks"))
-                {
-                    // todo: app.XYZ(vector<Track*> v) that fills filter
-                    app.featureMinMaxValues.fill(
-                        glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min()));
-                    for(const Track* trackPtr : app.pinnedTracks)
-                    {
-                        for(auto indx = 0; indx < trackPtr->features.size(); indx++)
-                        {
-                            app.featureMinMaxValues[indx].x =
-                                std::min(app.featureMinMaxValues[indx].x, trackPtr->features[indx]);
-                            app.featureMinMaxValues[indx].y =
-                                std::max(app.featureMinMaxValues[indx].y, trackPtr->features[indx]);
-                        }
-                    }
-                    app.filterDirty = true;
-                }
-            }
-            ImGui::Separator();
-
-            app.filteredTracksTable.draw();
-            if(ImGui::Button("Export to playlist"))
-            {
-                // todo: promt popup to ask for PL name
-                app.createPlaylist(app.filteredTracks);
-            }
-            ImGui::SameLine(app.filteredTracksTable.width - scaleByDPI(80.f));
-            if(ImGui::Button("Pin all"))
-            {
-                app.pinTracks(app.filteredTracks);
-            }
-        }
-        ImGui::End(); // Playlist Data Window
-
-        if(app.showRecommendations)
-        {
-            ImGui::SetNextWindowSize(ImVec2(0, 0));
-            ImGui::SetNextWindowSizeConstraints(ImVec2(-1, 0), ImVec2(-1, scaleByDPI(500.0f))); // Vertical only
-            if(ImGui::Begin("Pin Recommendations", &app.showRecommendations, ImGuiWindowFlags_NoSavedSettings))
-            {
-                if(app.recommendedTracks.empty())
-                {
-                    ImGui::TextUnformatted("No recommendations found :(");
-                }
-                int id = -1;
-                for(const auto& recommendation : app.recommendedTracks)
-                {
-                    const float coverSize = scaleByDPI(64.0f);
-                    const auto& track = recommendation.track;
-                    id++;
-                    ImGui::PushID(id);
-                    if(ImGui::ImageHoverButton(
-                           "hiddenButtonRecommended",
-                           reinterpret_cast<ImTextureID>(track->coverInfoPtr->id),
-                           reinterpret_cast<ImTextureID>(spotifyIconHandle),
-                           coverSize,
-                           0.5f))
-                    {
-                        app.startTrackPlayback(track->id);
-                    }
-                    float maxTextSize = ImGui::CalcTextSize("MMMMMMMMMMMMMMMMMMMMMMMMM").x;
-                    ImGui::SameLine();
-                    if(ImGui::BeginChild("Names", ImVec2(maxTextSize, coverSize)))
-                    {
-                        ImGui::TextUnformatted(track->trackNameEncoded.c_str());
-                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
-                        ImGui::TextUnformatted(track->albumNameEncoded.c_str());
-                        ImGui::PopStyleColor();
-                        ImGui::TextUnformatted(track->artistsNamesEncoded.c_str());
-                    }
-                    ImGui::EndChild(); // Names Child
-
-                    ImGui::SameLine();
-                    if(ImGui::Button("Pin Track"))
-                    {
-                        app.pinTrack(track);
-                    }
-                    ImGui::PopID();
-                }
-            }
-            ImGui::End(); // Pin Recommendations Window
-        }
-    } // ui hidden
-
-    if(app.showDeviceErrorWindow)
-    {
-        ImGui::SetNextWindowFocus();
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255));
-        ImGui::PushStyleColor(ImGuiCol_TitleBgActive, IM_COL32(180, 50, 50, 255));
-        ImGui::Begin(
-            "Device Error",
-            &app.showDeviceErrorWindow,
-            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-        ImGui::PopStyleColor();
-        ImGui::TextUnformatted("Warning:\n"
-                               "There's currently no active Spotify session!\n"
-                               "An inactive session can be refreshed by\n"
-                               "eg.: playing & pausing a track.\n");
-        ImGui::Separator();
-        ImGui::TextUnformatted("The Spotify desktop client can be downloaded for free from:");
-        if(ImGui::Button("spotify.com/download"))
-        {
-#ifdef _WIN32
-            ShellExecute(nullptr, nullptr, "https://spotify.com/download", nullptr, nullptr, SW_SHOW);
-#else
-    #error open (default) webbrowser with given URL
-#endif
-        }
-        ImGui::PopStyleColor();
-        ImGui::End();
-    }
-
-    endFrame();
+    // generate new mipmaps now that new covers have been added
+    glGenerateTextureMipmap(coverArrayHandle);
+    // also need to regenerate TrackBuffer, so that new layer indices are uploaded to GPU aswell
+    // todo: dont need to re-fill full buffer, just update the indices -> add function that replaces
+    // just these parts
+    fillTrackBuffer(app.graphingFeatureX, app.graphingFeatureY, app.graphingFeatureZ);
 }

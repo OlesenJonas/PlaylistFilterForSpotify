@@ -243,13 +243,13 @@ void Table<type>::draw()
                 ImGui::TextUnformatted(tracks[row]->trackNameEncoded.c_str());
                 if(ImGui::IsItemClicked())
                 {
-                    app.getRenderer().selectedTrack = tracks[row];
+                    app.selectedTrack = tracks[row];
                 }
                 ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
                 ImGui::TextUnformatted(tracks[row]->albumNameEncoded.c_str());
                 if(ImGui::IsItemClicked())
                 {
-                    app.getRenderer().selectedTrack = tracks[row];
+                    app.selectedTrack = tracks[row];
                 }
                 ImGui::PopStyleColor();
 

@@ -33,10 +33,13 @@ class Renderer
     Renderer& operator=(Renderer&& other) = delete; // move assign
     ~Renderer();
 
-    void drawLogIn();
-    void drawPLSelect();
-    void drawPLLoad();
-    void drawMain();
+    void startFrame();
+    void drawBackgroundWindow();
+    void drawUI();
+    void draw3DGraph();
+    void endFrame();
+
+    void uploadAvailableCovers();
 
     void buildRenderData();
     void rebuildBuffer();
@@ -51,10 +54,6 @@ class Renderer
     // todo: make private
     App& app;
 
-    int graphingFeature1 = 0;
-    int graphingFeature2 = 1;
-    int graphingFeature3 = 2;
-
     // Window Settings
     GLFWwindow* window;
     int width = 1600;
@@ -65,33 +64,22 @@ class Renderer
     double mouse_y = static_cast<float>(height) / 2.0f;
     Camera cam = Camera(static_cast<float>(width) / height);
 
-    float coverSize3D = 0.1f;
     std::vector<TrackBufferElement> trackBuffer;
-
-    Track* selectedTrack = nullptr;
-    bool uiHidden = false;
-    ImGuiTextFilter genreFilter;
 
     GLuint spotifyIconHandle;
 
+    GLuint coverArrayHandle;
+    GLuint coverArrayFreeIndex = 1;
+    std::mutex coverLoadQueueMutex;
+    std::queue<TextureLoadInfo> coverLoadQueue;
+
   private:
-    void startFrame();
-    void endFrame();
-    void drawBackgroundWindow();
     void fillTrackBuffer(int i1, int i2, int i3);
 
     int FONT_SIZE = 14;
     float dpiScale = 1.0f;
 
     double last_frame;
-
-    GLuint coverArrayHandle;
-    GLuint coverArrayFreeIndex = 1;
-    bool canLoadCovers = true;
-    int coversTotal;
-    int coversLoaded;
-    std::mutex coverLoadQueueMutex;
-    std::queue<TextureLoadInfo> coverLoadQueue;
 
     GLuint lineVAO;
     GLuint lineVBO;

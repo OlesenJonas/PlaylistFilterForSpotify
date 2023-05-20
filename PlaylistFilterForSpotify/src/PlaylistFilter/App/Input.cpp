@@ -5,7 +5,8 @@
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
+    auto* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
+    App& app = renderer->app;
     if((button == GLFW_MOUSE_BUTTON_MIDDLE || button == GLFW_MOUSE_BUTTON_RIGHT) && action == GLFW_PRESS)
     {
         glfwGetCursorPos(window, &renderer->mouse_x, &renderer->mouse_y);
@@ -22,6 +23,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
     if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
+        // todo: this all should be function of app ?
+
         if(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByPopup))
         {
             return;
@@ -60,13 +63,13 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         glm::vec3 n = glm::normalize(glm::cross(worldCamX, worldCamY));
 
         glm::vec3 axisMins{
-            renderer->app.featureMinMaxValues[renderer->graphingFeature1].x,
-            renderer->app.featureMinMaxValues[renderer->graphingFeature2].x,
-            renderer->app.featureMinMaxValues[renderer->graphingFeature3].x};
+            app.featureMinMaxValues[app.graphingFeatureX].x,
+            app.featureMinMaxValues[app.graphingFeatureY].x,
+            app.featureMinMaxValues[app.graphingFeatureZ].x};
         glm::vec3 axisMaxs{
-            renderer->app.featureMinMaxValues[renderer->graphingFeature1].y,
-            renderer->app.featureMinMaxValues[renderer->graphingFeature2].y,
-            renderer->app.featureMinMaxValues[renderer->graphingFeature3].y};
+            app.featureMinMaxValues[app.graphingFeatureX].y,
+            app.featureMinMaxValues[app.graphingFeatureY].y,
+            app.featureMinMaxValues[app.graphingFeatureZ].y};
         glm::vec3 axisFactors = axisMaxs - axisMins;
 
         glm::vec3 hitP;
@@ -90,7 +93,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             float localX = glm::dot(hitP - tboP, worldCamX);
             float localY = glm::dot(hitP - tboP, worldCamY);
             bool insideSquare =
-                std::abs(localX) < 0.5f * renderer->coverSize3D && std::abs(localY) < 0.5f * renderer->coverSize3D;
+                std::abs(localX) < 0.5f * app.coverSize3D && std::abs(localY) < 0.5f * app.coverSize3D;
             if(insideSquare && t < hit.t)
             {
                 hit.t = t;
@@ -99,21 +102,22 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 debugHitP = hitP;
             }
         }
-        renderer->selectedTrack = nullptr;
+        app.selectedTrack = nullptr;
         if(hit.index != std::numeric_limits<uint32_t>::max())
         {
-            renderer->selectedTrack = &(renderer->app.playlist)[hit.index];
+            app.selectedTrack = &(app.playlist)[hit.index];
         }
     }
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
+    auto* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
+    App& app = renderer->app;
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
     if(key == GLFW_KEY_TAB && action == GLFW_PRESS)
-        renderer->uiHidden = !renderer->uiHidden;
+        app.uiHidden = !app.uiHidden;
 }
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
