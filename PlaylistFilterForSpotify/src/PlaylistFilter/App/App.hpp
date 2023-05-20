@@ -61,6 +61,8 @@ class App
     void createPlaylist(const std::vector<Track*>& tracks);
     void extendPinsByRecommendations();
 
+    void generateGraphingData();
+
     Renderer& getRenderer();
 
     // this needs to be first, so it gets initialized first
@@ -122,6 +124,7 @@ class App
     int lastPlayedTrack = -1;
     bool showDeviceErrorWindow = false;
     Track* selectedTrack = nullptr;
+    std::vector<GraphingBufferElement> graphingData;
 
     // App State
     State state = LOG_IN;

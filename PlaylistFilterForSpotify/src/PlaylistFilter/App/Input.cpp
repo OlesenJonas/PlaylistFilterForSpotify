@@ -82,9 +82,9 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         };
         HitResult hit;
 
-        for(const auto& trackBufferElement : renderer->trackBuffer)
+        for(const auto& graphingBufferElement : app.graphingData)
         {
-            glm::vec3 tboP = trackBufferElement.p;
+            glm::vec3 tboP = graphingBufferElement.p;
             tboP = (tboP - axisMins) / axisFactors;
             float t = glm::dot(tboP - rayStart, n) / glm::dot(rayDir, n);
             t = std::max(0.f, t);
@@ -97,7 +97,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             if(insideSquare && t < hit.t)
             {
                 hit.t = t;
-                hit.index = trackBufferElement.originalIndex;
+                hit.index = graphingBufferElement.originalIndex;
                 resP = tboP;
                 debugHitP = hitP;
             }

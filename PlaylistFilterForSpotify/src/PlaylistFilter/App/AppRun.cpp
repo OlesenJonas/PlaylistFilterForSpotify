@@ -171,7 +171,9 @@ void App::runPlaylistLoad()
     {
         // can only upload to GPU from main thread, so this last step has to happen here
         // to account for the extra "loading time" the progress bar in renderer.cpp only goes up to 90% :)
-        renderer.buildRenderData();
+        renderer.createRenderData();
+        generateGraphingData();
+        renderer.uploadGraphingData(graphingData);
         state = State::MAIN;
     }
 }
@@ -197,7 +199,13 @@ void App::runMain()
 {
     renderer.startFrame();
 
-    renderer.uploadAvailableCovers();
+    if(renderer.uploadAvailableCovers())
+    {
+        // also need to regenerate TrackBuffer, so that new layer indices are uploaded to GPU aswell
+        //  todo: dont need to replace full buffer, just need to update texture indices!
+        generateGraphingData();
+        renderer.uploadGraphingData(graphingData);
+    }
 
     createMainUI();
 
@@ -247,7 +255,8 @@ void App::runMain()
     }
     if(graphingDirty)
     {
-        renderer.rebuildBuffer();
+        generateGraphingData();
+        renderer.uploadGraphingData(graphingData);
         graphingDirty = false;
     }
 }

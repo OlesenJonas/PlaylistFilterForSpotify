@@ -1,3 +1,4 @@
+#include "CommonStructs/CommonStructs.hpp"
 #include <App/App.hpp>
 #include <DynamicBitset/DynamicBitset.hpp>
 #include <Renderer/Renderer.hpp>
@@ -62,6 +63,7 @@ bool App::checkAuth()
     return apiAccess.checkAuth(std::string{state}, std::string{code});
 }
 
+// This is started asynchronously
 void App::loadSelectedPlaylist()
 {
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
@@ -79,6 +81,8 @@ void App::loadSelectedPlaylist()
     }
     // initially the filtered playlist is the same as the original
     filteredTracks = playlistTracks;
+
+    graphingData.reserve(playlist.size());
 }
 
 void App::extractPlaylistIDFromInput()
@@ -291,6 +295,22 @@ void App::extendPinsByRecommendations()
     showRecommendations = true;
     renderer.highlightWindow("Pin Recommendations");
 };
+
+void App::generateGraphingData()
+{
+    graphingData.clear();
+    for(const Track* track : filteredTracks)
+    {
+        // uint32_t index = static_cast<uint32_t>(track - baseptr);
+        auto index = std::distance((const Track*)playlist.data(), track);
+        graphingData.emplace_back(GraphingBufferElement{
+            {track->features[graphingFeatureX],
+             track->features[graphingFeatureY],
+             track->features[graphingFeatureZ]},
+            track->coverInfoPtr->layer,
+            (GLuint)index});
+    }
+}
 
 Renderer& App::getRenderer()
 {

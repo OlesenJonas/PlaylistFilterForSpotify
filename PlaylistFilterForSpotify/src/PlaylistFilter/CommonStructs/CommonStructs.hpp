@@ -9,7 +9,7 @@
 
 struct Track;
 
-struct TrackBufferElement
+struct GraphingBufferElement
 {
     // position of track
     glm::vec3 p;

@@ -39,10 +39,12 @@ class Renderer
     void draw3DGraph();
     void endFrame();
 
-    void uploadAvailableCovers();
+    /*
+        returns true if textures were uploaded
+    */
+    bool uploadAvailableCovers();
 
-    void buildRenderData();
-    void rebuildBuffer();
+    void createRenderData();
     void highlightWindow(const std::string& name);
 
     template <typename T>
@@ -51,7 +53,6 @@ class Renderer
         return in * dpiScale;
     }
 
-    // todo: make private
     App& app;
 
     // Window Settings
@@ -64,8 +65,6 @@ class Renderer
     double mouse_y = static_cast<float>(height) / 2.0f;
     Camera cam = Camera(static_cast<float>(width) / height);
 
-    std::vector<TrackBufferElement> trackBuffer;
-
     GLuint spotifyIconHandle;
 
     GLuint coverArrayHandle;
@@ -73,9 +72,10 @@ class Renderer
     std::mutex coverLoadQueueMutex;
     std::queue<TextureLoadInfo> coverLoadQueue;
 
-  private:
-    void fillTrackBuffer(int i1, int i2, int i3);
+    void uploadGraphingData(const std::vector<GraphingBufferElement>& data);
+    uint32_t graphingDataCount = 0;
 
+  private:
     int FONT_SIZE = 14;
     float dpiScale = 1.0f;
 

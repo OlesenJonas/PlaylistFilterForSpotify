@@ -1,3 +1,4 @@
+#include "CommonStructs/CommonStructs.hpp"
 #include <future>
 
 #include <ImGui/imgui.h>
@@ -240,7 +241,7 @@ Renderer::~Renderer()
     glfwTerminate();
 }
 
-void Renderer::buildRenderData()
+void Renderer::createRenderData()
 {
     unsigned char* data = nullptr;
 
@@ -281,33 +282,18 @@ void Renderer::buildRenderData()
     glBindVertexArray(trackVAO);
     glGenBuffers(1, &trackVBO);
     glBindBuffer(GL_ARRAY_BUFFER, trackVBO);
-    trackBuffer.reserve(app.filteredTracks.size());
-    fillTrackBuffer(0, 1, 2);
-    glBufferData(
-        GL_ARRAY_BUFFER, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
+    GraphingBufferElement placeholder;
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GraphingBufferElement) * 1, &placeholder, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TrackBufferElement), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GraphingBufferElement), nullptr);
     glEnableVertexAttribArray(1);
-    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(TrackBufferElement), (void*)(3 * sizeof(float)));
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GraphingBufferElement), (void*)(3 * sizeof(float)));
 }
 
-void Renderer::rebuildBuffer()
+void Renderer::uploadGraphingData(const std::vector<GraphingBufferElement>& data)
 {
-    fillTrackBuffer(app.graphingFeatureX, app.graphingFeatureY, app.graphingFeatureZ);
-}
-
-void Renderer::fillTrackBuffer(int i1, int i2, int i3)
-{
-    Track* baseptr = app.playlist.data();
-    trackBuffer.clear();
-    for(const Track* track : app.filteredTracks)
-    {
-        uint32_t index = static_cast<uint32_t>(track - baseptr);
-        trackBuffer.push_back(
-            {{track->features[i1], track->features[i2], track->features[i3]}, track->coverInfoPtr->layer, index});
-    }
-    glNamedBufferData(
-        trackVBO, sizeof(TrackBufferElement) * trackBuffer.size(), trackBuffer.data(), GL_STATIC_DRAW);
+    glNamedBufferData(trackVBO, sizeof(data[0]) * data.size(), data.data(), GL_STATIC_DRAW);
+    graphingDataCount = data.size();
 };
 
 void Renderer::highlightWindow(const std::string& name)
@@ -483,7 +469,7 @@ void Renderer::draw3DGraph()
     glBindTexture(GL_TEXTURE_2D_ARRAY, coverArrayHandle);
 
     glBindVertexArray(trackVAO);
-    glDrawArrays(GL_POINTS, 0, trackBuffer.size());
+    glDrawArrays(GL_POINTS, 0, graphingDataCount);
 }
 
 void Renderer::endFrame()
@@ -492,12 +478,12 @@ void Renderer::endFrame()
     glfwSwapBuffers(window);
 }
 
-void Renderer::uploadAvailableCovers()
+bool Renderer::uploadAvailableCovers()
 {
     // upload new texture data if theyre ready
     // could limit to a max amount per frame to keep frametimes more stable
     if(coverLoadQueue.empty())
-        return;
+        return false;
 
     std::lock_guard<std::mutex> lock(coverLoadQueueMutex);
     while(!coverLoadQueue.empty())
@@ -527,8 +513,6 @@ void Renderer::uploadAvailableCovers()
     }
     // generate new mipmaps now that new covers have been added
     glGenerateTextureMipmap(coverArrayHandle);
-    // also need to regenerate TrackBuffer, so that new layer indices are uploaded to GPU aswell
-    // todo: dont need to re-fill full buffer, just update the indices -> add function that replaces
-    // just these parts
-    fillTrackBuffer(app.graphingFeatureX, app.graphingFeatureY, app.graphingFeatureZ);
+
+    return true;
 }
