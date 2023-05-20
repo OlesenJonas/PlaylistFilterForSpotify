@@ -1,30 +1,35 @@
-TabWidth: 4
-IndentWidth: 4
-IndentPPDirectives: BeforeHash
-PPIndentWidth: -1
+---
+# sorted alphabetically
 AlignAfterOpenBracket: AlwaysBreak
-ColumnLimit: 110
-IncludeBlocks: Preserve
-DerivePointerAlignment: false
-PointerAlignment: Left
-BinPackArguments: false
+AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortFunctionsOnASingleLine: None
-BreakBeforeBraces: Custom
-FixNamespaceComments: true
-NamespaceIndentation: All
-SortIncludes: true
-IncludeBlocks: Preserve
-AlignAfterOpenBracket: AlwaysBreak
-SpaceBeforeParens: Never
-AlwaysBreakTemplateDeclarations: Yes
-AllowShortLambdasOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Inline
+AlwaysBreakTemplateDeclarations: 'Yes'
+BinPackArguments: false
+BinPackParameters: false
 BraceWrapping:
-    AfterNamespace: true
-    AfterStruct:    true
-    AfterClass:      true
-    AfterControlStatement: true
-    AfterEnum:       true
-    BeforeWhile:    true
-    AfterFunction:   true
-    BeforeElse:      true
-    BeforeLambdaBody: true
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: true
+BreakBeforeBraces: Custom
+ColumnLimit: 115
+DerivePointerAlignment: false
+FixNamespaceComments: true
+IncludeBlocks: Preserve
+IndentPPDirectives: BeforeHash
+IndentRequiresClause: true
+IndentWidth: 4
+NamespaceIndentation: All
+PPIndentWidth: -1
+PackConstructorInitializers: NextLine
+PointerAlignment: Left
+RequiresClausePosition: OwnLine
+SortIncludes: true
+SpaceBeforeParens: Never
+TabWidth: 4

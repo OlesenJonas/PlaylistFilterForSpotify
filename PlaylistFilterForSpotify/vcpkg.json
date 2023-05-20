@@ -1,0 +1,11 @@
+{
+    "name": "playlistfilterforspotify",
+    "version": "1.0.0",
+    "dependencies": [
+        "glfw3",
+        "glm",
+        "daw-json-link",
+        "cryptopp",
+        "cpr"
+    ]
+}

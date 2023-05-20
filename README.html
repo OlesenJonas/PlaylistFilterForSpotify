@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>PlaylistFilterForSpotify</title>
+        <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+        
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+        
+    </head>
+    <body class="vscode-body vscode-light">
+        <h1 id="playlistfilterforspotify">PlaylistFilterForSpotify</h1>
+<p>Program to filter tracks of a Spotify playlist aswell as visualize them in 3D.<br>
+Useful for</p>
+<ul>
+<li>selecting a group of tracks with similar style from a playlist that contains multiple types of music
+<ul>
+<li>based on Audio features</li>
+<li>and/or Spotify recommendations</li>
+<li>and/or the Artists' genres</li>
+</ul>
+</li>
+<li>visualizing the audio properties of a playlist in 3D</li>
+</ul>
+<p>(These are my personal use-cases, and whats currently supported. For further features see: <a href="#wip">WIP</a>)<br>
+Requires Opengl 4.5 support (could definitly be downgraded to a lower version with some code changes)</p>
+<p>Filtering Overview
+<img src="file:///c:\Users\jonas\Documents\GitHub\PlaylistFilterForSpotify\images\filtering.png" alt="Filtering Overview"></p>
+<p>Visualization Overview
+<img src="file:///c:\Users\jonas\Documents\GitHub\PlaylistFilterForSpotify\images\plotting.png" alt="Visualization Overview"></p>
+<h3 id="controls-for-the-camera-in-3d">Controls (for the camera in 3D)</h3>
+<ul>
+<li>Hold RMB to enter fly mode and use the mouse to look around + WASD and EQ(up/down) to move</li>
+<li>Hold MMB and move the mouse to rotate around the center.</li>
+<li>Hold shift + MMB to pan the camera</li>
+<li>Scrollwheel to zoom in/out</li>
+</ul>
+<hr>
+<h3 id="building">Building</h3>
+<p>Builds using CMake Tools and Clang as compiler in VSCode on Windows.<br>
+Requires Crypto++ and glfw libraries in /lib/ (Optionally adjust CMake file to link them from elsewhere).<br>
+Clangd is setup for formatting (using clang-format) aswell as Autocomplete, Warnings etc.<br>
+Building from source requires you to provide your own Api Access through a &quot;secrets.h&quot; file in src/Spotify/. This file should define the following variables:</p>
+<pre><code class="language-cpp"><span class="hljs-type">static</span> <span class="hljs-type">const</span> std::string clientID = <span class="hljs-string">&quot;...&quot;</span>;
+<span class="hljs-comment">//base64 contains base64_encode(clientID+&quot;:&quot;+clientSecret)</span>
+<span class="hljs-type">static</span> <span class="hljs-type">const</span> std::string base64 = <span class="hljs-string">&quot;...&quot;</span>;
+<span class="hljs-type">static</span> <span class="hljs-type">const</span> std::string redirectURL = <span class="hljs-string">&quot;...&quot;</span>; <span class="hljs-comment">//eg: &quot;https://olesenjonas.github.io/&quot;</span>
+<span class="hljs-type">static</span> <span class="hljs-type">const</span> std::string encodedRedirectURL = <span class="hljs-string">&quot;...&quot;</span>; <span class="hljs-comment">//eg: &quot;https%3A%2F%2Folesenjonas.github.io%2F&quot;</span>
+</code></pre>
+<p>Client Secret and ID can be retrieved after registering an application at <a href="https://developer.spotify.com/dashboard/applications">https://developer.spotify.com/dashboard/applications</a></p>
+<h4 id="cross-platform">Cross-Platform</h4>
+<p>Windows only code is used for two cases:</p>
+<ul>
+<li>string &lt;-&gt; wstring conversion using MultiByteToWideChar</li>
+<li>Opening URL using ShellExecute</li>
+</ul>
+<p>Creates #error if _WIN32 is not defined. Everything else should work cross-platform.</p>
+<h3 id="wip">WIP</h3>
+<p>These are things I think are useful but are not implemented yet (and may never be):<br>
+(In no particular order)</p>
+<ul>
+<li>Error Handling (Spoiler: theres currently almost none, but really should be)<br>
+Especially for:
+<ul>
+<li>access-token timeout, which would be as simple as refreshing the token after 1h<br>
+thats how long they last currently, enough for me</li>
+<li>api requests limit</li>
+</ul>
+</li>
+<li>Fuzzy-String comparisons for searching</li>
+<li>Resize &quot;Split&quot; between both Tables</li>
+<li>Loading more Font ranges (and a Font that supports them) (Arabic, Chinese, etc.)</li>
+<li>Make loading the covers safer (currently pretty unsafe with .death()-ed threads, no guarantee they finish</li>
+<li>Hide individual columns of the tables</li>
+<li>Option to sort genre selection by # of occurance (current solution) <em>or</em> active/inactive</li>
+<li>Option to combine genres in different ways (currently track just needs to match <em>any</em> of the selected genres) but matching <em>all</em> genres could also be beneficial</li>
+<li>Better (looking) UI</li>
+</ul>
+
+        
+        
+    </body>
+    </html>

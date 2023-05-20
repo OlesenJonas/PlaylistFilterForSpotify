@@ -1,0 +1,11 @@
+include(${CMAKE_MODULE_PATH}/DefaultExecutable.cmake)
+
+target_link_libraries(PlaylistFilter PRIVATE ImGui)
+target_link_libraries(PlaylistFilter PRIVATE stb)
+target_link_libraries(PlaylistFilter PRIVATE glad)
+target_link_libraries(PlaylistFilter PRIVATE json)
+target_link_libraries(PlaylistFilter PRIVATE cpr::cpr)
+target_link_libraries(PlaylistFilter PRIVATE cryptopp::cryptopp)
+target_link_libraries(PlaylistFilter PRIVATE daw::daw-json-link)
+target_link_libraries(PlaylistFilter PRIVATE glfw)
+target_link_libraries(PlaylistFilter PRIVATE glm::glm)

@@ -1,7 +1,7 @@
 get_filename_component(FOLDER_VAR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project("${FOLDER_VAR}")
 
-file(GLOB_RECURSE ADDITIONAL_FILES 
+file(GLOB_RECURSE SOURCES 
 	${CMAKE_CURRENT_SOURCE_DIR}/*.c
 	${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/*.h
@@ -9,12 +9,11 @@ file(GLOB_RECURSE ADDITIONAL_FILES
 )
 
 add_compile_definitions(EXECUTABLE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+add_compile_definitions(EXECUTABLE_NAME="${FOLDER_VAR}")
 
 # Define the executable
-add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ADDITIONAL_FILES})
-
-# Define the link libraries
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+add_executable(${PROJECT_NAME} ${SOURCES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(CMAKE_BUILD_TYPE MATCHES Release)
 	# For release builds we want to put the shader sources and misc files in the executable folder
