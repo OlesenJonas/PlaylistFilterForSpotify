@@ -25,7 +25,7 @@ Visualization Overview
 ---
 
 ### Building
-Currently builds using Clang and CMake on Windows.\
+Currently builds using Clang and CMake on Windows. (Line 34 in cryptopp's config-os.h needs to be commented out when using clang on windows, but it works atm)\
 Requires vcpkg for gathering the required packages. Its root directory must be stored in the *VCPKG_ROOT* environment variable.
 Building from source requires you to provide your own Api Access through a ```secrets.hpp``` file in ```src/PlaylistFilter/Spotify/```. This file should define the following variables:
 ```cpp
