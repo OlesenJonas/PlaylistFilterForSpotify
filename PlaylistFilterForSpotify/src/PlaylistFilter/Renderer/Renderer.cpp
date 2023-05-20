@@ -15,6 +15,7 @@
 
 #include "Renderer.hpp"
 #include <App/App.hpp>
+#include <App/Input.hpp>
 #include <utils/OpenGLErrorHandler.hpp>
 #include <utils/imgui_extensions.hpp>
 
