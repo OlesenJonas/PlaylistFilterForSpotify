@@ -40,8 +40,7 @@ class App
 
     void setFeatureFiltersFromPins(int featureIndex);
 
-    Track*
-    raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3 worldCamX, glm::vec3 worldCamY);
+    Track* raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir);
 
   private:
     enum State

@@ -382,9 +382,13 @@ std::unordered_map<std::string, CoverInfo>& App::getCoverTable()
     return coverTable;
 }
 
-Track*
-App::raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3 worldCamX, glm::vec3 worldCamY)
+Track* App::raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir)
 {
+    glm::mat4 invProj = glm::inverse(*(renderer.cam.getProj()));
+    glm::mat4 invView = glm::inverse(*(renderer.cam.getView()));
+    glm::vec3 worldCamX = glm::vec3(invView * glm::vec4(1.0f, 0.f, 0.f, 0.f));
+    glm::vec3 worldCamY = glm::vec3(invView * glm::vec4(0.f, 1.0f, 0.f, 0.f));
+
     glm::vec3 n = glm::normalize(glm::cross(worldCamX, worldCamY));
 
     glm::vec3 axisMins{

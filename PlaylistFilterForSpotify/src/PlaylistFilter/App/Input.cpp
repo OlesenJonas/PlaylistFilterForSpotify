@@ -29,38 +29,11 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         {
             return;
         }
-        double mx = 0;
-        double my = 0;
-        glfwGetCursorPos(window, &mx, &my);
 
-        glm::mat4 invProj = glm::inverse(*(renderer->cam.getProj()));
-        glm::mat4 invView = glm::inverse(*(renderer->cam.getView()));
-        float screenX = 2.f * (static_cast<float>(mx) / renderer->width) - 1.f;
-        float screenY = -2.f * (static_cast<float>(my) / renderer->height) + 1.f;
-        glm::vec4 clipN{screenX, screenY, 0.0f, 1.0f};
-        glm::vec4 viewN = invProj * clipN;
-        viewN /= viewN.w;
-        glm::vec4 worldN = invView * viewN;
-        glm::vec4 clipF{screenX, screenY, 1.0f, 1.0f};
-        glm::vec4 viewF = invProj * clipF;
-        viewF /= viewF.w;
-        glm::vec4 worldF = invView * viewF;
-
-        // everything gets remapped [0,1] -> [-1,1] in VS
-        // coverBuffer contains values in [0,1] but we want to test against visible tris
-        worldF = 0.5f * worldF + 0.5f;
-        worldN = 0.5f * worldN + 0.5f;
-
-        glm::vec3 rayStart = worldN;
-        glm::vec3 rayDir = (worldF - worldN);
-        rayDir = glm::normalize(rayDir);
-
-        // glm::vec3 worldCamX = glm::vec3(invView * glm::vec4(coverSize3D, 0.f, 0.f, 0.f));
-        // glm::vec3 worldCamY = glm::vec3(invView * glm::vec4(0.f, coverSize3D, 0.f, 0.f));
-        glm::vec3 worldCamX = glm::vec3(invView * glm::vec4(1.0f, 0.f, 0.f, 0.f));
-        glm::vec3 worldCamY = glm::vec3(invView * glm::vec4(0.f, 1.0f, 0.f, 0.f));
-
-        Track* hitTrack = app.raycastAgainstGraphingBuffer(rayStart, rayDir, worldCamX, worldCamY);
+        Renderer::Ray mouseRay = renderer->getMouseRay();
+        // everything gets remapped [0,1] -> [-1,1] in VS, undo that for the ray here
+        mouseRay.origin = 0.5f * mouseRay.origin + 0.5f;
+        Track* hitTrack = app.raycastAgainstGraphingBuffer(mouseRay.origin, mouseRay.direction);
         // todo: only set if something was hit?
         app.setSelectedTrack(hitTrack);
     }

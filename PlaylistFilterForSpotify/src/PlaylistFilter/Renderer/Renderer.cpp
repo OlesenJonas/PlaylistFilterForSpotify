@@ -6,6 +6,7 @@
 #include <ImGui/imgui_impl_opengl3.h>
 #include <ImGui/imgui_internal.h>
 #include <glm/common.hpp>
+#include <glm/ext/quaternion_geometric.hpp>
 #include <stb/stb_image.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -20,7 +21,7 @@
 #include <utils/OpenGLErrorHandler.hpp>
 #include <utils/imgui_extensions.hpp>
 
-Renderer::Renderer(App& a) : app(a)
+Renderer::Renderer(App& app) : app(app)
 {
     // todo: handle errors!
 
@@ -473,6 +474,28 @@ void Renderer::endFrame()
 {
     // Swap buffer
     glfwSwapBuffers(window);
+}
+
+Renderer::Ray Renderer::getMouseRay()
+{
+    double mx = 0;
+    double my = 0;
+    glfwGetCursorPos(window, &mx, &my);
+
+    glm::mat4 invProj = glm::inverse(*(cam.getProj()));
+    glm::mat4 invView = glm::inverse(*(cam.getView()));
+    float screenX = 2.f * (static_cast<float>(mx) / width) - 1.f;
+    float screenY = -2.f * (static_cast<float>(my) / height) + 1.f;
+    glm::vec4 clipN{screenX, screenY, 0.0f, 1.0f};
+    glm::vec4 viewN = invProj * clipN;
+    viewN /= viewN.w;
+    glm::vec4 worldN = invView * viewN;
+    glm::vec4 clipF{screenX, screenY, 1.0f, 1.0f};
+    glm::vec4 viewF = invProj * clipF;
+    viewF /= viewF.w;
+    glm::vec4 worldF = invView * viewF;
+
+    return {worldN, glm::normalize(worldF - worldN)};
 }
 
 bool Renderer::uploadAvailableCovers(int& progressTracker)

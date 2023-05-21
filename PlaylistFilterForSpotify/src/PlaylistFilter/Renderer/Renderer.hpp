@@ -25,7 +25,7 @@ class App;
 class Renderer
 {
   public:
-    explicit Renderer(App& a);
+    explicit Renderer(App& app);
     Renderer(const App&&) = delete;                 // prevents rvalue binding
     Renderer(const Renderer&) = delete;             // copy constr
     Renderer& operator=(const Renderer&) = delete;  // copy assign
@@ -38,6 +38,13 @@ class Renderer
     void drawUI();
     void draw3DGraph(float coverSize, glm::vec2& minMaxX, glm::vec2& minMaxY, glm::vec2& minMaxZ);
     void endFrame();
+
+    struct Ray
+    {
+        glm::vec3 origin;
+        glm::vec3 direction;
+    };
+    Ray getMouseRay();
 
     /*
         returns true if textures were uploaded
