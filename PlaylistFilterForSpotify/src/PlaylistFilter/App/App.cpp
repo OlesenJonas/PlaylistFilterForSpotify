@@ -84,10 +84,7 @@ void App::loadSelectedPlaylist()
     filteredTracks = playlistTracks;
 
     coversTotal = coverTable.size();
-    // todo: forgot why this is set here, add reminder
-    //      I *think* its because progress bar is drawn when coversLoaded != coversTotal
-    //      but with the seperation into PLAYLIST_SELECT/LOAD this shouldnt be necessary!
-    coversLoaded = coversTotal;
+    coversLoaded = 0;
 }
 
 void App::extractPlaylistIDFromInput()
@@ -109,11 +106,6 @@ void App::extractPlaylistIDFromInput()
             playlistID = "";
         }
     }
-}
-
-std::optional<std::string> App::checkPlaylistID(std::string_view id)
-{
-    return apiAccess.checkPlaylistExistance(id);
 }
 
 void App::resetFeatureFilters()

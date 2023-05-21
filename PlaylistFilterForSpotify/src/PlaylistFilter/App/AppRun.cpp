@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "ImGui/imgui.h"
 #include <stb/stb_image.h>
 
 bool App::shouldClose()
@@ -330,9 +331,9 @@ void App::createMainUI()
             filterDirty = true;
         }
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
-        ImGui::Separator();
         if(selectedTrack != nullptr)
         {
+            ImGui::Separator();
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
             const float coverSize = renderer.scaleByDPI(64.0f);
             if(ImGui::ImageHoverButton(
@@ -426,7 +427,7 @@ void App::createMainUI()
                     }
                 }
             }
-            if(coversLoaded != coversTotal)
+            if(!canLoadCovers && coversLoaded != coversTotal)
             {
                 ImGui::ProgressBar(static_cast<float>(coversLoaded) / coversTotal);
             }
@@ -489,7 +490,7 @@ void App::createMainUI()
                 // todo: promt popup to ask for PL name
                 createPlaylist(filteredTracks);
             }
-            ImGui::SameLine(filteredTracksTable.width - renderer.scaleByDPI(80.f));
+            ImGui::SameLine(filteredTracksTable.width - renderer.scaleByDPI(35.f));
             if(ImGui::Button("Pin all"))
             {
                 pinTracks(filteredTracks);

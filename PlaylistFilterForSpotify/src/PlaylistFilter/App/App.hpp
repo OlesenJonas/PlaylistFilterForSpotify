@@ -79,8 +79,6 @@ class App
     // Load all data relevant for analyzing the given playlist from Spotify
     void loadSelectedPlaylist();
 
-    std::optional<std::string> checkPlaylistID(std::string_view id);
-
     void resetFeatureFilters();
     void refreshFilteredTracks();
 
