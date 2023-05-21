@@ -131,11 +131,11 @@ class App
     std::array<glm::vec2, Track::featureAmount> featureMinMaxValues;
     bool filterDirty = false;
     std::vector<Track*> filteredTracks;
-    Table<TableType::Filtered> filteredTracksTable;
+    FilteredTracksTable filteredTracksTable;
 
     // Pin related variables
     std::vector<Track*> pinnedTracks;
-    Table<TableType::Pinned> pinnedTracksTable;
+    PinnedTracksTable pinnedTracksTable;
     int recommendAccuracy = 1;
     std::vector<Recommendation> recommendedTracks;
     bool showRecommendations = false;
