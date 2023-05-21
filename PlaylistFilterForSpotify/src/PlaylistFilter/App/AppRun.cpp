@@ -171,8 +171,10 @@ void App::runPlaylistLoad()
     {
         // can only upload to GPU from main thread, so this last step has to happen here
         // to account for the extra "loading time" the progress bar in renderer.cpp only goes up to 90% :)
-        renderer.createRenderData();
+        //                                                                                     todo: just no
+        graphingData.reserve(playlist.size());
         generateGraphingData();
+        renderer.createRenderData();
         renderer.uploadGraphingData(graphingData);
         state = State::MAIN;
     }
@@ -216,41 +218,10 @@ void App::runMain()
     renderer.endFrame();
 
     // Have to do this after creating UI is done, otherwise conflicts happen
-    // todo: factor out into refreshFilter() method !!!!
+    //      todo: not sure if I want the [flag] = false; lines inside the refresh/generate function
     if(filterDirty)
     {
-        filteredTracks.clear();
-        for(auto& track : playlist)
-        {
-            for(auto i = 0; i < Track::featureAmount; i++)
-            {
-                if(track.features[i] < featureMinMaxValues[i].x || track.features[i] > featureMinMaxValues[i].y)
-                {
-                    goto failedFilter;
-                }
-            }
-            if(currentGenreMask)
-            {
-                if(!(currentGenreMask & track.genreMask))
-                {
-                    goto failedFilter;
-                }
-            }
-            if(nameFilter.InputBuf[0] != 0)
-            {
-                if(!nameFilter.PassFilter(track.artistsNamesEncoded.c_str()) &&
-                   !nameFilter.PassFilter(track.albumNameEncoded.c_str()) &&
-                   !nameFilter.PassFilter(track.trackNameEncoded.c_str()))
-                {
-                    goto failedFilter;
-                }
-            }
-            filteredTracks.push_back(&track);
-        failedFilter:;
-        }
-        // also have to re-sort here;
-        filteredTracksTable.sortData();
-        graphingDirty = true;
+        refreshFilteredTracks();
         filterDirty = false;
     }
     if(graphingDirty)
