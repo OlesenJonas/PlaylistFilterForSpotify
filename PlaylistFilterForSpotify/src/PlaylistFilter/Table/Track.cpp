@@ -19,7 +19,7 @@ FilteredTracksTable::FilteredTracksTable(App& p_app, std::vector<Track*>& p_trac
 
 ImVec2 PinnedTracksTable::getTableSize()
 {
-    // todo: add reminder why exactly these two values differ
+    // atm the pinned table is limited to displaying 3 tracks at once (and a small margin of 0.7)
     return {width, rowSize.y * (std::min<int>(tracks.size(), 3) + 0.7f)};
 }
 ImVec2 FilteredTracksTable::getTableSize()
@@ -48,8 +48,6 @@ Table::Table(App& p_app, std::vector<Track*>& p_tracks) : app(p_app), tracks(p_t
     calcHeaderWidth();
 }
 
-// todo: move into constructor once the renderer constructor works correctly
-// exist yet, move after refactored
 void Table::calcHeaderWidth()
 {
     const Renderer& renderer = app.getRenderer();
