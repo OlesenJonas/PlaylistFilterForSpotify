@@ -36,15 +36,16 @@ class Renderer
     void startFrame();
     void drawBackgroundWindow();
     void drawUI();
-    void draw3DGraph();
+    void draw3DGraph(float coverSize, glm::vec2& minMaxX, glm::vec2& minMaxY, glm::vec2& minMaxZ);
     void endFrame();
 
     /*
         returns true if textures were uploaded
     */
-    bool uploadAvailableCovers();
+    bool uploadAvailableCovers(int& progressTracker);
 
     void createRenderData();
+    bool renderDataWasCreated = false;
     void highlightWindow(const std::string& name);
 
     template <typename T>

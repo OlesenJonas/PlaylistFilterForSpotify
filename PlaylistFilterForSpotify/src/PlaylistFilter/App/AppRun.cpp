@@ -201,7 +201,7 @@ void App::runMain()
 {
     renderer.startFrame();
 
-    if(renderer.uploadAvailableCovers())
+    if(renderer.uploadAvailableCovers(coversLoaded))
     {
         // also need to regenerate TrackBuffer, so that new layer indices are uploaded to GPU aswell
         //  todo: dont need to replace full buffer, just need to update texture indices!
@@ -211,7 +211,11 @@ void App::runMain()
 
     createMainUI();
 
-    renderer.draw3DGraph();
+    renderer.draw3DGraph(
+        coverSize3D,
+        featureMinMaxValues[graphingFeatureX],
+        featureMinMaxValues[graphingFeatureY],
+        featureMinMaxValues[graphingFeatureZ]);
     renderer.drawBackgroundWindow();
 
     renderer.drawUI();
@@ -322,7 +326,7 @@ void App::createMainUI()
         ImGui::Dummy(ImVec2(0.0f, 1.0f));
         if(ImGui::Button("Reset all ↺"))
         {
-            resetFilterValues();
+            resetFeatureFilters();
             filterDirty = true;
         }
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
@@ -338,7 +342,7 @@ void App::createMainUI()
                    coverSize,
                    0.5f))
             {
-                startTrackPlayback(selectedTrack->id);
+                startTrackPlayback(selectedTrack);
             }
             float maxTextSize = ImGui::CalcTextSize("MMMMMMMMMMMMMMMMMMMMMMM").x;
             // ImGui::SetCursorPos(textStartPos);
@@ -518,7 +522,7 @@ void App::createMainUI()
                            coverSize,
                            0.5f))
                     {
-                        startTrackPlayback(track->id);
+                        startTrackPlayback(track);
                     }
                     float maxTextSize = ImGui::CalcTextSize("MMMMMMMMMMMMMMMMMMMMMMMMM").x;
                     ImGui::SameLine();

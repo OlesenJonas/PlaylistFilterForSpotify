@@ -18,6 +18,32 @@
 class App
 {
   public:
+    App();
+    ~App();
+
+    void run();
+    Renderer& getRenderer();
+    std::unordered_map<std::string, CoverInfo>& getCoverTable();
+    void setSelectedTrack(Track* track);
+    void toggleWindowVisibility();
+    int getLastPlayedTrackIndex();
+    bool startTrackPlayback(Track* track);
+
+    // returns true, if the genre with given passes the current filter
+    bool genrePassesFilter(uint32_t index);
+    void addGenreToFilter(uint32_t index);
+    void toggleGenreFilter(uint32_t index);
+    const char* getGenreName(uint32_t index);
+
+    bool pinTrack(Track* track);
+    void pinTracks(const std::vector<Track*>& tracks);
+
+    void setFeatureFiltersFromPins(int featureIndex);
+
+    Track*
+    raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3 worldCamX, glm::vec3 worldCamY);
+
+  private:
     enum State
     {
         LOG_IN,
@@ -26,12 +52,6 @@ class App
         MAIN
     };
 
-    App();
-    ~App();
-
-    void run();
-
-    // todo: these should be private
     void runLogIn();
     void createLogInUI();
 
@@ -46,25 +66,30 @@ class App
 
     // ---
 
-    void requestAuth();
-    bool checkAuth();
+    bool shouldClose();
 
+    // Opens a webpage to request authorization from spotify
+    void requestAuth();
+    // Check if the given redirect URL contains a valid authorization code
+    bool checkAuth();
+    /*
+        Attempt to extract a PlaylistID from the user input field.
+        Sets this class' playlistID field (either to the ID, or the empty string)
+    */
+    void extractPlaylistIDFromInput();
+    // Load all data relevant for analyzing the given playlist from Spotify
     void loadSelectedPlaylist();
 
-    void extractPlaylistIDFromInput();
     std::optional<std::string> checkPlaylistID(std::string_view id);
 
-    void resetFilterValues();
+    void resetFeatureFilters();
     void refreshFilteredTracks();
-    bool pinTrack(Track* track);
-    void pinTracks(const std::vector<Track*>& tracks);
-    bool startTrackPlayback(const std::string& trackId);
-    void createPlaylist(const std::vector<Track*>& tracks);
+
     void extendPinsByRecommendations();
 
-    void generateGraphingData();
+    void createPlaylist(const std::vector<Track*>& tracks);
 
-    Renderer& getRenderer();
+    void generateGraphingData();
 
     // this needs to be first, so it gets initialized first
     //  (Table initialization needs ImGui calc width)
@@ -134,7 +159,4 @@ class App
     bool canLoadCovers = true;
     int coversTotal;
     int coversLoaded;
-
-  private:
-    bool shouldClose();
 };

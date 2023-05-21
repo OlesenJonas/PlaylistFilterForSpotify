@@ -59,54 +59,10 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         // glm::vec3 worldCamY = glm::vec3(invView * glm::vec4(0.f, coverSize3D, 0.f, 0.f));
         glm::vec3 worldCamX = glm::vec3(invView * glm::vec4(1.0f, 0.f, 0.f, 0.f));
         glm::vec3 worldCamY = glm::vec3(invView * glm::vec4(0.f, 1.0f, 0.f, 0.f));
-        // need worldCamX/Y later, cant just do invView*(0,0,-1,0) here
-        glm::vec3 n = glm::normalize(glm::cross(worldCamX, worldCamY));
 
-        glm::vec3 axisMins{
-            app.featureMinMaxValues[app.graphingFeatureX].x,
-            app.featureMinMaxValues[app.graphingFeatureY].x,
-            app.featureMinMaxValues[app.graphingFeatureZ].x};
-        glm::vec3 axisMaxs{
-            app.featureMinMaxValues[app.graphingFeatureX].y,
-            app.featureMinMaxValues[app.graphingFeatureY].y,
-            app.featureMinMaxValues[app.graphingFeatureZ].y};
-        glm::vec3 axisFactors = axisMaxs - axisMins;
-
-        glm::vec3 hitP;
-        glm::vec3 debugHitP;
-        glm::vec3 resP;
-        struct HitResult
-        {
-            float t = std::numeric_limits<float>::max();
-            uint32_t index = std::numeric_limits<uint32_t>::max();
-        };
-        HitResult hit;
-
-        for(const auto& graphingBufferElement : app.graphingData)
-        {
-            glm::vec3 tboP = graphingBufferElement.p;
-            tboP = (tboP - axisMins) / axisFactors;
-            float t = glm::dot(tboP - rayStart, n) / glm::dot(rayDir, n);
-            t = std::max(0.f, t);
-            hitP = rayStart + t * rayDir;
-
-            float localX = glm::dot(hitP - tboP, worldCamX);
-            float localY = glm::dot(hitP - tboP, worldCamY);
-            bool insideSquare =
-                std::abs(localX) < 0.5f * app.coverSize3D && std::abs(localY) < 0.5f * app.coverSize3D;
-            if(insideSquare && t < hit.t)
-            {
-                hit.t = t;
-                hit.index = graphingBufferElement.originalIndex;
-                resP = tboP;
-                debugHitP = hitP;
-            }
-        }
-        app.selectedTrack = nullptr;
-        if(hit.index != std::numeric_limits<uint32_t>::max())
-        {
-            app.selectedTrack = &(app.playlist)[hit.index];
-        }
+        Track* hitTrack = app.raycastAgainstGraphingBuffer(rayStart, rayDir, worldCamX, worldCamY);
+        // todo: only set if something was hit?
+        app.setSelectedTrack(hitTrack);
     }
 }
 
@@ -117,7 +73,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
     if(key == GLFW_KEY_TAB && action == GLFW_PRESS)
-        app.uiHidden = !app.uiHidden;
+        app.toggleWindowVisibility();
 }
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)

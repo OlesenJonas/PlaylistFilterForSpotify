@@ -4,6 +4,7 @@
 #include <Renderer/Renderer.hpp>
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include <chrono>
 #include <future>
 #include <random>
@@ -19,7 +20,7 @@
 App::App() : renderer(*this), pinnedTracksTable(*this, pinnedTracks), filteredTracksTable(*this, filteredTracks)
 {
     apiAccess = SpotifyApiAccess();
-    resetFilterValues();
+    resetFeatureFilters();
     userInput.fill(0);
 }
 
@@ -81,6 +82,12 @@ void App::loadSelectedPlaylist()
     }
     // initially the filtered playlist is the same as the original
     filteredTracks = playlistTracks;
+
+    coversTotal = coverTable.size();
+    // todo: forgot why this is set here, add reminder
+    //      I *think* its because progress bar is drawn when coversLoaded != coversTotal
+    //      but with the seperation into PLAYLIST_SELECT/LOAD this shouldnt be necessary!
+    coversLoaded = coversTotal;
 }
 
 void App::extractPlaylistIDFromInput()
@@ -109,11 +116,10 @@ std::optional<std::string> App::checkPlaylistID(std::string_view id)
     return apiAccess.checkPlaylistExistance(id);
 }
 
-void App::resetFilterValues()
+void App::resetFeatureFilters()
 {
     featureMinMaxValues.fill(glm::vec2(0.0f, 1.0f));
     featureMinMaxValues[7] = {0, 300};
-    nameFilter.Clear();
 }
 
 void App::refreshFilteredTracks()
@@ -157,6 +163,7 @@ bool App::pinTrack(Track* track)
     if(std::find(pinnedTracks.begin(), pinnedTracks.end(), track) == pinnedTracks.end())
     {
         pinnedTracks.push_back(track);
+        lastPlayedTrack = std::distance(playlist.data(), track);
         return true;
     }
     return false;
@@ -173,12 +180,31 @@ void App::pinTracks(const std::vector<Track*>& tracks)
     }
 }
 
-bool App::startTrackPlayback(const std::string& trackId)
+void App::setFeatureFiltersFromPins(int featureIndex)
 {
-    bool ret = apiAccess.startTrackPlayback(trackId);
+    featureMinMaxValues[featureIndex] =
+        glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min());
+    for(const Track* trackPtr : pinnedTracks)
+    {
+        featureMinMaxValues[featureIndex].x =
+            std::min(featureMinMaxValues[featureIndex].x, trackPtr->features[featureIndex]);
+        featureMinMaxValues[featureIndex].y =
+            std::max(featureMinMaxValues[featureIndex].y, trackPtr->features[featureIndex]);
+    }
+    filterDirty = true;
+}
+
+bool App::startTrackPlayback(Track* track)
+{
+    bool ret = apiAccess.startTrackPlayback(track->id);
     if(!ret)
     {
         showDeviceErrorWindow = true;
+    }
+    else
+    {
+        lastPlayedTrack = std::distance(playlist.data(), track);
+        assert(&playlist[lastPlayedTrack] == track);
     }
     return ret;
 }
@@ -350,3 +376,97 @@ Renderer& App::getRenderer()
 {
     return renderer;
 };
+
+std::unordered_map<std::string, CoverInfo>& App::getCoverTable()
+{
+    return coverTable;
+}
+
+Track*
+App::raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir, glm::vec3 worldCamX, glm::vec3 worldCamY)
+{
+    glm::vec3 n = glm::normalize(glm::cross(worldCamX, worldCamY));
+
+    glm::vec3 axisMins{
+        featureMinMaxValues[graphingFeatureX].x,
+        featureMinMaxValues[graphingFeatureY].x,
+        featureMinMaxValues[graphingFeatureZ].x};
+    glm::vec3 axisMaxs{
+        featureMinMaxValues[graphingFeatureX].y,
+        featureMinMaxValues[graphingFeatureY].y,
+        featureMinMaxValues[graphingFeatureZ].y};
+    glm::vec3 axisFactors = axisMaxs - axisMins;
+
+    glm::vec3 hitP;
+    glm::vec3 debugHitP;
+    glm::vec3 resP;
+    struct HitResult
+    {
+        float t = std::numeric_limits<float>::max();
+        uint32_t index = std::numeric_limits<uint32_t>::max();
+    };
+    HitResult hit;
+
+    for(const auto& graphingBufferElement : graphingData)
+    {
+        glm::vec3 tboP = graphingBufferElement.p;
+        tboP = (tboP - axisMins) / axisFactors;
+        float t = glm::dot(tboP - rayPos, n) / glm::dot(rayDir, n);
+        t = std::max(0.f, t);
+        hitP = rayPos + t * rayDir;
+
+        float localX = glm::dot(hitP - tboP, worldCamX);
+        float localY = glm::dot(hitP - tboP, worldCamY);
+        bool insideSquare = std::abs(localX) < 0.5f * coverSize3D && std::abs(localY) < 0.5f * coverSize3D;
+        if(insideSquare && t < hit.t)
+        {
+            hit.t = t;
+            hit.index = graphingBufferElement.originalIndex;
+            resP = tboP;
+            debugHitP = hitP;
+        }
+    }
+    Track* selectedTrack = nullptr;
+    if(hit.index != std::numeric_limits<uint32_t>::max())
+    {
+        selectedTrack = &(playlist)[hit.index];
+    }
+    return selectedTrack;
+}
+
+void App::setSelectedTrack(Track* track)
+{
+    selectedTrack = track;
+}
+
+void App::toggleWindowVisibility()
+{
+    uiHidden = !uiHidden;
+}
+
+int App::getLastPlayedTrackIndex()
+{
+    return lastPlayedTrack;
+}
+
+bool App::genrePassesFilter(uint32_t index)
+{
+    return currentGenreMask.getBit(index);
+}
+
+void App::addGenreToFilter(uint32_t index)
+{
+    currentGenreMask.setBit(index);
+    filterDirty = true;
+}
+
+void App::toggleGenreFilter(uint32_t index)
+{
+    currentGenreMask.toggleBit(index);
+    filterDirty = true;
+}
+
+const char* App::getGenreName(uint32_t index)
+{
+    return genreNames[index].c_str();
+}

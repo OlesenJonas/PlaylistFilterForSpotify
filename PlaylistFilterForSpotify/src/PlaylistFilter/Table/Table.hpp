@@ -202,7 +202,7 @@ void Table<type>::draw()
                 ImGui::TableNextRow();
                 ImGui::PushID(row);
 
-                if(tracks[row]->index == app.lastPlayedTrack)
+                if(tracks[row]->index == app.getLastPlayedTrackIndex())
                 {
                     ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(122, 122, 122, 80));
                 }
@@ -235,21 +235,20 @@ void Table<type>::draw()
                        coverSize,
                        0.5f))
                 {
-                    app.startTrackPlayback(tracks[row]->id);
-                    app.lastPlayedTrack = tracks[row]->index;
+                    app.startTrackPlayback(tracks[row]);
                 }
 
                 ImGui::TableSetColumnIndex(2);
                 ImGui::TextUnformatted(tracks[row]->trackNameEncoded.c_str());
                 if(ImGui::IsItemClicked())
                 {
-                    app.selectedTrack = tracks[row];
+                    app.setSelectedTrack(tracks[row]);
                 }
                 ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
                 ImGui::TextUnformatted(tracks[row]->albumNameEncoded.c_str());
                 if(ImGui::IsItemClicked())
                 {
-                    app.selectedTrack = tracks[row];
+                    app.setSelectedTrack(tracks[row]);
                 }
                 ImGui::PopStyleColor();
 
@@ -279,11 +278,10 @@ void Table<type>::draw()
                         // so chcking as while-condition while also clearing all bits is super redundant
                         uint32_t smallestIndex = temp.getFirstBitSet();
                         temp.clearBit(smallestIndex);
-                        const bool isSelected = app.currentGenreMask.getBit(smallestIndex);
-                        if(ImGui::Selectable(app.genreNames[smallestIndex].c_str(), isSelected))
+                        const bool isSelected = app.genrePassesFilter(smallestIndex);
+                        if(ImGui::Selectable(app.getGenreName(smallestIndex), isSelected))
                         {
-                            app.currentGenreMask.toggleBit(smallestIndex);
-                            app.filterDirty = true;
+                            app.toggleGenreFilter(smallestIndex);
                         }
                     }
                     ImGui::EndCombo();
@@ -301,10 +299,7 @@ void Table<type>::draw()
                 {
                     if(ImGui::Button("Pin"))
                     {
-                        if(app.pinTrack(tracks[row]))
-                        {
-                            app.lastPlayedTrack = tracks[row]->index;
-                        }
+                        app.pinTrack(tracks[row]);
                     }
                 }
 
@@ -332,17 +327,8 @@ void Table<type>::draw()
                 {
                     if(ImGui::Button("Create Filter##perColumn"))
                     {
-                        int featureIndex = column - 4;
-                        app.featureMinMaxValues[featureIndex] =
-                            glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::min());
-                        for(const Track* trackPtr : app.pinnedTracks)
-                        {
-                            app.featureMinMaxValues[featureIndex].x = std::min(
-                                app.featureMinMaxValues[featureIndex].x, trackPtr->features[featureIndex]);
-                            app.featureMinMaxValues[featureIndex].y = std::max(
-                                app.featureMinMaxValues[featureIndex].y, trackPtr->features[featureIndex]);
-                        }
-                        app.filterDirty = true;
+                        const int featureIndex = column - 4;
+                        app.setFeatureFiltersFromPins(featureIndex);
                     }
                     ImGui::Text(" based on values in column %s", columnHeaders[column].name.c_str());
                     if(ImGui::Button("Close"))

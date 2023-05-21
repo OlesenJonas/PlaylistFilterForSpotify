@@ -225,8 +225,7 @@ Renderer::~Renderer()
     glDeleteBuffers(1, &gridVBO);
     glDeleteVertexArrays(1, &gridVAO);
 
-    // if the graphing elements were generated, delete them
-    if(app.state == App::State::MAIN)
+    if(renderDataWasCreated)
     {
         glDeleteTextures(1, &coverArrayHandle);
         glDeleteBuffers(1, &trackVBO);
@@ -249,7 +248,8 @@ void Renderer::createRenderData()
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &coverArrayHandle);
     glTextureParameteri(coverArrayHandle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(coverArrayHandle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureStorage3D(coverArrayHandle, 3, GL_RGB8, 64, 64, app.coverTable.size() + 1);
+    // size() + 1 for the default icon
+    glTextureStorage3D(coverArrayHandle, 3, GL_RGB8, 64, 64, app.getCoverTable().size() + 1);
     // Load data of placeholder texture
     {
         int x, y, components;
@@ -266,17 +266,12 @@ void Renderer::createRenderData()
     stbi_image_free(data);
 
     CoverInfo defaultInfo = {.url = "", .layer = 0, .id = defaultCoverHandle};
-    app.coverTable[""] = defaultInfo;
+    app.getCoverTable()[""] = defaultInfo;
 
-    for(auto& entry : app.coverTable)
+    for(auto& entry : app.getCoverTable())
     {
         entry.second.id = defaultCoverHandle;
     }
-
-    // todo: move into App code
-    app.coversTotal = app.coverTable.size() - 1;
-    // todo: forgot why this is set here, add reminder
-    app.coversLoaded = app.coversTotal;
 
     glGenVertexArrays(1, &trackVAO);
     glBindVertexArray(trackVAO);
@@ -288,6 +283,8 @@ void Renderer::createRenderData()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GraphingBufferElement), nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(GraphingBufferElement), (void*)(3 * sizeof(float)));
+
+    renderDataWasCreated = true;
 }
 
 void Renderer::uploadGraphingData(const std::vector<GraphingBufferElement>& data)
@@ -352,7 +349,7 @@ void Renderer::drawUI()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void Renderer::draw3DGraph()
+void Renderer::draw3DGraph(float coverSize, glm::vec2& minMaxX, glm::vec2& minMaxY, glm::vec2& minMaxZ)
 {
     // todo: move this into camera code (some update() func)
     if(!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByPopup))
@@ -457,10 +454,10 @@ void Renderer::draw3DGraph()
     glDrawArrays(GL_LINES, 0, 6);
 
     CoverGraphingShader.UseProgram();
-    CoverGraphingShader.setFloat("width", app.coverSize3D);
-    CoverGraphingShader.setVec2("minMaxX", app.featureMinMaxValues[app.graphingFeatureX]);
-    CoverGraphingShader.setVec2("minMaxY", app.featureMinMaxValues[app.graphingFeatureY]);
-    CoverGraphingShader.setVec2("minMaxZ", app.featureMinMaxValues[app.graphingFeatureZ]);
+    CoverGraphingShader.setFloat("width", coverSize);
+    CoverGraphingShader.setVec2("minMaxX", minMaxX);
+    CoverGraphingShader.setVec2("minMaxY", minMaxY);
+    CoverGraphingShader.setVec2("minMaxZ", minMaxZ);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(*(cam.getView())));
     glUniformMatrix4fv(2, 1, GL_FALSE, glm::value_ptr(*(cam.getProj())));
@@ -478,7 +475,7 @@ void Renderer::endFrame()
     glfwSwapBuffers(window);
 }
 
-bool Renderer::uploadAvailableCovers()
+bool Renderer::uploadAvailableCovers(int& progressTracker)
 {
     // upload new texture data if theyre ready
     // could limit to a max amount per frame to keep frametimes more stable
@@ -509,7 +506,7 @@ bool Renderer::uploadAvailableCovers()
         stbi_image_free(tli.data);
         // add entry to table
         tli.ptr->id = albumCoverHandle;
-        app.coversLoaded++;
+        progressTracker++;
     }
     // generate new mipmaps now that new covers have been added
     glGenerateTextureMipmap(coverArrayHandle);
