@@ -152,6 +152,7 @@ class App
     // App State
     State state = LOG_IN;
     float loadPlaylistProgress = 0.0f;
+    std::string loadingPlaylistProgressLabel = "";
     std::future<void> doneLoading;
     bool canLoadCovers = true;
     int coversTotal;

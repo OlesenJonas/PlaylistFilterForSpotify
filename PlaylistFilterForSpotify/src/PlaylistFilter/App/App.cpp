@@ -69,7 +69,8 @@ void App::loadSelectedPlaylist()
 {
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
     // lambda can switch back if lambda refactored into function
-    std::tie(playlist, coverTable, genreNames) = apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress);
+    std::tie(playlist, coverTable, genreNames) =
+        apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress, &loadingPlaylistProgressLabel);
     // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
 
     currentGenreMask = DynBitset(genreNames.size());

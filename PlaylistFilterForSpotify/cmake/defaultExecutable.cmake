@@ -23,6 +23,6 @@ IF(CMAKE_BUILD_TYPE MATCHES Release)
 		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/misc/")
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD  
 		COMMAND ${CMAKE_COMMAND} -E copy_directory 		
-		"${CMAKE_SOURCE_DIR}/src/Shaders"     
+		"${CMAKE_SOURCE_DIR}/src/PlaylistFilter/Shaders"     
 		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/Shaders/") 
 ENDIF()

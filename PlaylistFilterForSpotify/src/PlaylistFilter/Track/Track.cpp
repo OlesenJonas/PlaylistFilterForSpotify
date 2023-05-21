@@ -1,5 +1,7 @@
 #include "Track.hpp"
 
+#include <utility>
+
 Track::Track(
     int idx,
     std::string pid,
@@ -8,13 +10,20 @@ Track::Track(
     std::string palbumId,
     std::string palbumNameE)
     : index(idx),
-      id(pid),
-      trackNameEncoded(ptrackNameE),
-      artistsNamesEncoded(partistsNamesE),
-      albumId(palbumId),
-      albumNameEncoded(palbumNameE)
+      id(std::move(pid)),
+      trackNameEncoded(std::move(ptrackNameE)),
+      artistsNamesEncoded(std::move(partistsNamesE)),
+      albumId(std::move(palbumId)),
+      albumNameEncoded(std::move(palbumNameE))
 {
     // std::cout << "Constructing TrackData Object" << std::endl;
+    trackName = utf8_decode(trackNameEncoded);
+    artistsNames = utf8_decode(artistsNamesEncoded);
+    albumName = utf8_decode(albumNameEncoded);
+}
+
+void Track::decodeNames()
+{
     trackName = utf8_decode(trackNameEncoded);
     artistsNames = utf8_decode(artistsNamesEncoded);
     albumName = utf8_decode(albumNameEncoded);

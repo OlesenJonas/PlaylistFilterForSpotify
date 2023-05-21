@@ -33,7 +33,7 @@ struct CoverInfo
     // Layer index in the big cover array
     GLuint layer = 0;
     // OpenGL handle of a texture view, covering just that single layer
-    GLuint id;
+    GLuint id = 0xFFFFFFFF;
 };
 
 struct TextureLoadInfo
@@ -69,5 +69,14 @@ struct RecommendationHash
     std::size_t operator()(const Recommendation& r) const
     {
         return std::hash<Track*>{}(r.track);
+    }
+};
+
+struct StringRefWapperHash
+{
+    std::size_t operator()(const std::string& obj) const
+    {
+        std::hash<const std::string*> theHash{};
+        return theHash(&obj);
     }
 };

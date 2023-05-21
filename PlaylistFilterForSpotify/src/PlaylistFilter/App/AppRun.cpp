@@ -186,14 +186,16 @@ void App::createPlaylistLoadUI()
         "##PlaylistLoading",
         nullptr,
         ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoScrollbar);
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
     {
         ImVec2 size = ImGui::GetWindowSize();
         ImGui::SetWindowPos(ImVec2(renderer.width / 2.0f - size.x / 2.0f, renderer.height / 2.0f - size.y / 2.0f));
         const float barWidth = static_cast<float>(renderer.width) / 3.0f;
         const float barHeight = renderer.scaleByDPI(30.0f);
         // ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
+        ImGui::Text("Downloading track data:");
         ImGui::HorizontalBar(0.0f, loadPlaylistProgress, {barWidth, barHeight});
+        ImGui::Text("%s", loadingPlaylistProgressLabel.c_str());
     }
     ImGui::End();
 }

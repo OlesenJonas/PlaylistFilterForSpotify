@@ -13,6 +13,7 @@
 
 struct Track
 {
+    Track() = default;
     Track(
         int idx,
         std::string pid,
@@ -27,6 +28,7 @@ struct Track
     std::string trackNameEncoded;
     std::wstring trackName;
 
+    std::vector<std::string> artistIds;
     std::string artistsNamesEncoded;
     std::wstring artistsNames;
 
@@ -56,6 +58,8 @@ struct Track
     CoverInfo* coverInfoPtr = nullptr;
 
     DynBitset genreMask;
+
+    void decodeNames();
 };
 
 struct TrackSorter
