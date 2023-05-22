@@ -1,4 +1,5 @@
 #include "CommonStructs/CommonStructs.hpp"
+#include <GLFW/glfw3.h>
 #include <future>
 
 #include <ImGui/imgui.h>
@@ -357,7 +358,9 @@ void Renderer::draw3DGraph(float coverSize, glm::vec2& minMaxX, glm::vec2& minMa
     {
         if(cam.mode == CAMERA_ORBIT)
         {
-            if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+            if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) || //
+               (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) &&
+                glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS))
             {
                 double xPos = NAN;
                 double yPos = NAN;

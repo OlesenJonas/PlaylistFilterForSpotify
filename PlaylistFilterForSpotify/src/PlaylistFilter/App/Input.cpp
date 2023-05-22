@@ -1,6 +1,7 @@
 #include "Input.hpp"
 #include "App.hpp"
 
+#include <GLFW/glfw3.h>
 #include <Renderer/Renderer.hpp>
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -13,8 +14,11 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
     if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
     {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        renderer->cam.setMode(CAMERA_FLY);
+        if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            renderer->cam.setMode(CAMERA_FLY);
+        }
     }
     if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
     {
