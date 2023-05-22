@@ -193,9 +193,8 @@ void App::createPlaylistLoadUI()
         const float barWidth = static_cast<float>(renderer.width) / 3.0f;
         const float barHeight = renderer.scaleByDPI(30.0f);
         // ImGui::SetCursorScreenPos({width / 2.0f - barWidth / 2.0f, height / 2.0f});
-        ImGui::Text("Downloading track data:");
+        ImGui::Text("%s:", loadingPlaylistProgressLabel.c_str());
         ImGui::HorizontalBar(0.0f, loadPlaylistProgress, {barWidth, barHeight});
-        ImGui::Text("%s", loadingPlaylistProgressLabel.c_str());
     }
     ImGui::End();
 }
