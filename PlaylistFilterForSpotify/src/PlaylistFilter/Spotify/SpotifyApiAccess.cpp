@@ -7,11 +7,13 @@
 #include <CommonStructs/CommonStructs.hpp>
 #include <DynamicBitset/DynamicBitset.hpp>
 
+#include <chrono>
 #include <cpr/body.h>
 #include <cpr/payload.h>
 #include <cpr/response.h>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -93,6 +95,10 @@ bool SpotifyApiAccess::checkAuth(const std::string& p_state, const std::string& 
         return false;
     }
     json r_json = json::parse(r.text);
+    secondsUntilRefreshRequired = r_json["expires_in"].get<int>();
+    // reduce a bit as a safety buffer
+    secondsUntilRefreshRequired = secondsUntilRefreshRequired * 90 / 100;
+    // secondsUntilRefreshRequired = 30;
     access_token = r_json["access_token"].get<std::string>();
     refresh_token = r_json["refresh_token"].get<std::string>();
 
@@ -106,6 +112,34 @@ bool SpotifyApiAccess::checkAuth(const std::string& p_state, const std::string& 
     return true;
 }
 
+void SpotifyApiAccess::startRefreshThread()
+{
+    refreshThread = std::thread{&SpotifyApiAccess::waitAndRefresh, this};
+    refreshThread.detach();
+}
+
+void SpotifyApiAccess::waitAndRefresh()
+{
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    while(true)
+    {
+        auto endTime = std::chrono::high_resolution_clock::now();
+        while(!refreshThreadShouldTop && //
+              std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime) <
+                  std::chrono::seconds{secondsUntilRefreshRequired})
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            endTime = std::chrono::high_resolution_clock::now();
+        }
+
+        if(refreshThreadShouldTop)
+            return;
+
+        refreshAccessToken();
+    }
+}
+
 void SpotifyApiAccess::refreshAccessToken()
 {
     const std::string query = "https://accounts.spotify.com/api/token";
@@ -117,6 +151,7 @@ void SpotifyApiAccess::refreshAccessToken()
     auto r_json = json::parse(r.text);
 
     access_token = r_json["access_token"].get<std::string>();
+    secondsUntilRefreshRequired = r_json["expires_in"].get<int>();
 }
 
 std::tuple<

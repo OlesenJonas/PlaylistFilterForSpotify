@@ -24,6 +24,8 @@ class SpotifyApiAccess
     bool checkAuth(const std::string& p_state, const std::string& code);
     // refresh the users access token
     void refreshAccessToken();
+    void startRefreshThread();
+    void waitAndRefresh();
 
     // todo: handle api errors
     // build the main playlist data, a vector of track objects and a map [Album ID -> CoverInfo Struct]
@@ -59,6 +61,11 @@ class SpotifyApiAccess
     std::string code_verifier;
 
     std::string userId;
-    std::string refresh_token;
+    // need a lock for the tiny chance that in the exact moment the token is refreshed, something else is still
+    // reading it
     std::string access_token;
+    std::string refresh_token;
+    int secondsUntilRefreshRequired = 0;
+    std::thread refreshThread;
+    bool refreshThreadShouldTop = false;
 };

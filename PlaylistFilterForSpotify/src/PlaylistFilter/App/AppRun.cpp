@@ -81,6 +81,7 @@ void App::createLogInUI()
         }
         else
         {
+            apiAccess.startRefreshThread();
             state = App::State::PLAYLIST_SELECT;
             std::fill(userInput.begin(), userInput.end(), '\0');
         }
