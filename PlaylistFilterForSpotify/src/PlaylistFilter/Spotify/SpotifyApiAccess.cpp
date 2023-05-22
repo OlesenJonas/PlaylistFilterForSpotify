@@ -351,8 +351,11 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             }
         }
 
+        *progressTracker = static_cast<float>(i) / static_cast<float>(artistCount);
+
         ids.clear();
     }
+    *progressTracker = 1.0f;
 
     *progressName = "Sorting genres";
     for(auto& entry : genreNameToIndex)
