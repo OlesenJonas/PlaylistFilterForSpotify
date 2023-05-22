@@ -280,15 +280,31 @@ void App::createMainUI()
                 if(genreFilter.PassFilter(genreNames[i].c_str()))
                 {
                     const bool isSelected = currentGenreMask.getBit(i);
-                    if(ImGui::Selectable(genreNames[i].c_str(), isSelected))
+                    if(!displayOnlySelectedGenres || isSelected)
                     {
-                        currentGenreMask.toggleBit(i);
-                        filterDirty = true;
+                        if(ImGui::Selectable(genreNames[i].c_str(), isSelected))
+                        {
+                            currentGenreMask.toggleBit(i);
+                            filterDirty = true;
+                        }
                     }
                 }
             }
         }
         ImGui::EndChild();
+        if(ImGui::Button("Select all matching genres##genreFilter"))
+        {
+            for(uint32_t i = 0; i < genreNames.size(); i++)
+            {
+                if(genreFilter.PassFilter(genreNames[i].c_str()))
+                {
+                    currentGenreMask.setBit(i);
+                    filterDirty = true;
+                }
+            }
+        }
+        ImGui::Checkbox("Show only selected##genreFilter", &displayOnlySelectedGenres);
+        ImGui::SameLine();
         if(ImGui::Button("↺##genreFilter"))
         {
             currentGenreMask.clear();

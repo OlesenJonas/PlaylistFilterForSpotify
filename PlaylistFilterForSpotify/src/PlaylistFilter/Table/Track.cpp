@@ -19,8 +19,8 @@ FilteredTracksTable::FilteredTracksTable(App& p_app, std::vector<Track*>& p_trac
 
 ImVec2 PinnedTracksTable::getTableSize()
 {
-    // atm the pinned table is limited to displaying 3 tracks at once (and a small margin of 0.7)
-    return {width, rowSize.y * (std::min<int>(tracks.size(), 3) + 0.7f)};
+    // atm the pinned table is limited to displaying 4 tracks at once (and a small margin of 0.7)
+    return {width, rowSize.y * (std::min<int>(tracks.size(), 4) + 0.7f)};
 }
 ImVec2 FilteredTracksTable::getTableSize()
 {

@@ -129,6 +129,7 @@ class App
     bool filterDirty = false;
     std::vector<Track*> filteredTracks;
     FilteredTracksTable filteredTracksTable;
+    bool displayOnlySelectedGenres = false;
 
     // Pin related variables
     std::vector<Track*> pinnedTracks;
