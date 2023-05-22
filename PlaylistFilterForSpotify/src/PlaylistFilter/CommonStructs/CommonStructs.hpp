@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 
 #include <ImGui/imgui.h>
+#include <array>
 #include <glm/ext.hpp>
 #include <string>
 #include <vector>
@@ -78,5 +79,32 @@ struct StringRefWapperHash
     {
         std::hash<const std::string*> theHash{};
         return theHash(&obj);
+    }
+};
+
+// using
+struct StringHash
+{
+    using hashType = std::hash<std::string_view>;
+    using is_transparent = void;
+
+    std::size_t operator()(const char* str) const
+    {
+        return hashType{}(str);
+    }
+    std::size_t operator()(std::string_view str) const
+    {
+        // assert(str.size() == 22);
+        return hashType{}(str);
+    }
+    std::size_t operator()(const std::string& str) const
+    {
+        // assert(str.size() == 22);
+        return hashType{}(str);
+    }
+    template <size_t N>
+    std::size_t operator()(const std::array<char, N>& array) const
+    {
+        return hashType{}(std::string_view{array.data(), N});
     }
 };

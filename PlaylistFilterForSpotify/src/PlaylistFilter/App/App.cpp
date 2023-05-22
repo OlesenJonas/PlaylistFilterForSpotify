@@ -370,7 +370,7 @@ Renderer& App::getRenderer()
     return renderer;
 };
 
-std::unordered_map<std::string, CoverInfo>& App::getCoverTable()
+SpotifyApiAccess::CoverTable_t& App::getCoverTable()
 {
     return coverTable;
 }

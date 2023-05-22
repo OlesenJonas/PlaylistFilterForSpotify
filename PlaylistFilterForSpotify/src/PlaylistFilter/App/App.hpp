@@ -23,7 +23,7 @@ class App
 
     void run();
     Renderer& getRenderer();
-    std::unordered_map<std::string, CoverInfo>& getCoverTable();
+    SpotifyApiAccess::CoverTable_t& getCoverTable();
     void setSelectedTrack(Track* track);
     void toggleWindowVisibility();
     int getLastPlayedTrackIndex();
@@ -117,7 +117,7 @@ class App
 
         Key string is AlbumID
     */
-    std::unordered_map<std::string, CoverInfo> coverTable;
+    SpotifyApiAccess::CoverTable_t coverTable;
 
     std::vector<std::string> genreNames;
 

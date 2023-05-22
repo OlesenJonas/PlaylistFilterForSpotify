@@ -118,7 +118,7 @@ void SpotifyApiAccess::refreshAccessToken()
     access_token = r_json["access_token"].get<std::string>();
 }
 
-std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>, std::vector<std::string>>
+std::tuple<std::vector<Track>, SpotifyApiAccess::CoverTable_t, std::vector<std::string>>
 SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progressTracker, std::string* progressName)
 {
     cpr::Response r = cpr::Get(
@@ -127,36 +127,40 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
 
     ResponseTotal responseTotal = ResponseTotal::load(r.text);
-    uint32_t total = responseTotal.total;
+    uint32_t totalAmountOfTracks = responseTotal.total;
+    int requestCountLimit = 50;
+    uint32_t trackRequestsAmount = (totalAmountOfTracks + requestCountLimit - 1) / requestCountLimit;
 
     uint32_t tracksLoaded = 0;
 
-    std::vector<Track> playlist;
-    playlist.reserve(total);
-    // key is albumID
-    std::unordered_map<std::string, CoverInfo> coverTable;
+    std::vector<Track> tracks;
+    tracks.reserve(totalAmountOfTracks);
 
-    // this should be genre occurance, but only artists have genres
-    std::unordered_map<std::string, uint32_t> artistOccurances;
+    CoverTable_t coverTable;
 
-    // todo: Doesnt work if an item in the playlist is an episode and not a song!
-
-    const std::string nameSeparator = ", ";
-    int requestCountLimit = 50;
-    int iteration = 0;
-    std::string queryUrl = "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
-                           "/tracks?limit=" + std::to_string(requestCountLimit) +
-                           "&fields=next,items(track(name,id,artists(name,id),popularity,album(id,name,images)))";
+    // todo: Doesnt work if an item in the playlist is an episode instead of a song!
+    std::string initialQuery =
+        "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
+        "/tracks?limit=" + std::to_string(requestCountLimit) +
+        "&fields=next,items(track(name,id,artists(name,id),popularity,album(id,name,images)))";
     PlaylistTracksResponse response;
+
+    uint32_t freeArtistIDIndex = 0;
+    std::vector<uint32_t> artistOccurances;
+    std::unordered_map<ArtistID, uint32_t, StringHash, std::equal_to<>> artistIDtoIndex;
+    // the actual vector will be created later, so these indices arent valid until then!
+    std::vector<std::vector<uint32_t>> perTrackArtistIndices;
+    perTrackArtistIndices.resize(totalAmountOfTracks);
+
     TracksFeaturesResponse audioFeatureResponse;
-    response.next = queryUrl;
-    while(response.next.has_value() && !response.next.value().empty())
+    for(int i = 0; i < trackRequestsAmount; i++)
     {
-        // Load requestCountLimit (50) tracks at once while there still tracks to be loaded
-        queryUrl = response.next.value();
+        if(i != 0)
+            assert(response.next.has_value());
+        std::string queryURL = i == 0 ? initialQuery : response.next.value();
 
         cpr::Response r = cpr::Get(
-            cpr::Url(queryUrl),
+            cpr::Url(queryURL),
             cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
 
         // todo: check for response type (wrong access token, wrong request) first, instead of just throwing!
@@ -165,24 +169,26 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             throw UnknownApiError();
         }
         response = PlaylistTracksResponse::load(r.text);
+        // now that all responses are being stored, shrink to fit?
 
         uint32_t tracksInRequest = response.items.size();
 
-        std::string ids;
+        // todo: could also move this outside of loop! (just cant use pop_back anymore)
+        std::string trackIds;
         // Lengh of spotify IDs (I think, but cant find specification for it in API atm)
         const int idLength = 22;
         // idLength characters per song + comma per song
-        ids.reserve(tracksInRequest * idLength + tracksInRequest);
+        trackIds.reserve(tracksInRequest * idLength + tracksInRequest);
 
         // TODO: I think a lot of the strings can be moved instead of copied
 
         // load track data from first requst (names & ids)
         for(auto j = 0; j < tracksInRequest; j++)
         {
-            const int trackIndex = iteration * requestCountLimit + j;
+            const int trackIndex = i * requestCountLimit + j;
             const auto& trackResponse = response.items[j].track;
-            Track& track = playlist.emplace_back();
-            assert(std::distance(playlist.data(), &track) == trackIndex);
+            Track& track = tracks.emplace_back();
+            assert(std::distance(tracks.data(), &track) == trackIndex);
             track.index = trackIndex;
 
             // can move here?
@@ -190,26 +196,36 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             track.id = trackResponse.id;
 
             assert(track.id.length() == 22);
-            ids += track.id + ",";
+            trackIds += track.id + ",";
 
             std::string& artistsNamesE = track.artistsNamesEncoded;
 
-            track.artistIds.reserve(trackResponse.artists.size());
+            perTrackArtistIndices[trackIndex].resize(trackResponse.artists.size());
             for(auto i = 0; i < trackResponse.artists.size(); i++)
             {
-                const auto& artistNameE = trackResponse.artists[i].name;
+                auto& artist = trackResponse.artists[i];
+                const auto& artistNameE = artist.name;
                 artistsNamesE += artistNameE;
                 if(i < trackResponse.artists.size() - 1)
                 {
-                    artistsNamesE += nameSeparator;
+                    artistsNamesE += ", ";
                 }
 
-                // increment entry (or create and increment)
-                artistOccurances[trackResponse.artists[i].id]++;
+                assert(artist.id.size() == 22);
+                auto artistIdToIndexIter = artistIDtoIndex.find(artist.id);
+                if(artistIdToIndexIter == artistIDtoIndex.end())
+                {
+                    // artist hasnt been recorded yet, add entry
+                    auto newEntry = artistIDtoIndex.emplace(std::make_pair(artist.id, freeArtistIDIndex));
+                    assert(newEntry.second);
+                    assert(newEntry.first->second == artistOccurances.size());
+                    freeArtistIDIndex++;
+                    artistOccurances.emplace_back(0);
 
-                // Save artist to retrieve genres later
-                // can this be moved here?
-                track.artistIds.emplace_back(trackResponse.artists[i].id);
+                    artistIdToIndexIter = newEntry.first;
+                }
+                artistOccurances[artistIdToIndexIter->second]++;
+                perTrackArtistIndices[trackIndex][i] = artistIdToIndexIter->second;
             }
 
             track.albumId = trackResponse.album.id;
@@ -222,6 +238,7 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             if(iter == coverTable.end())
             {
                 // not found, construct and set pointer
+                assert(track.albumId.size() == 22);
                 const std::string& coverUrl =
                     trackResponse.album.images[trackResponse.album.images.size() - 1].url;
                 // todo: pretty sure can also move here
@@ -231,30 +248,29 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             }
             else
             {
-                // do this linking later?
                 track.coverInfoPtr = &(iter->second);
             }
 
             track.decodeNames();
         }
         // remove trailing comma from track id list
-        ids.pop_back();
+        trackIds.pop_back();
 
         // Now retrieve audio featres from api (for the same batch of ids as the playlist tracks request)
-        queryUrl = "https://api.spotify.com/v1/audio-features?ids=" + ids;
+        queryURL = "https://api.spotify.com/v1/audio-features?ids=" + trackIds;
         r = cpr::Get(
-            cpr::Url(queryUrl),
+            cpr::Url(queryURL),
             cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
         audioFeatureResponse = TracksFeaturesResponse::load(r.text);
-        for(auto i = 0; i < audioFeatureResponse.audioFeatures.size(); i++)
+        for(auto j = 0; j < audioFeatureResponse.audioFeatures.size(); j++)
         {
-            const int trackIndex = iteration * requestCountLimit + i;
+            const int trackIndex = i * requestCountLimit + j;
             // ensure ids werent mixed up somehow
-            assert(audioFeatureResponse.audioFeatures[i].id == playlist[trackIndex].id);
+            assert(audioFeatureResponse.audioFeatures[j].id == tracks[trackIndex].id);
 
-            const auto& trackFeatures = audioFeatureResponse.audioFeatures[i];
+            const auto& trackFeatures = audioFeatureResponse.audioFeatures[j];
 
-            Track& track = playlist[trackIndex];
+            Track& track = tracks[trackIndex];
 
             track.features[0] = trackFeatures.acousticness;
             track.features[1] = trackFeatures.danceability;
@@ -266,10 +282,8 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
             track.features[7] = trackFeatures.tempo;
         }
 
-        iteration++;
-
         tracksLoaded += requestCountLimit;
-        *progressTracker = static_cast<float>(tracksLoaded) / static_cast<float>(total);
+        *progressTracker = static_cast<float>(tracksLoaded) / static_cast<float>(totalAmountOfTracks);
         *progressTracker = std::min(*progressTracker, 1.0f);
     }
 
@@ -286,16 +300,10 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
     };
     // store all genres in a nice linear array, need to have stability which index offers
     std::vector<GenreData> genreData;
-    // key is name
-    std::unordered_map<std::string, uint32_t> genreNameToIndex;
-    // store mapping from artist -> genre(s). key is ID, originally stored in artistOccurances
-    std::unordered_map<std::string_view, std::vector<uint32_t>> artistToGenres;
-    for(auto& entry : artistOccurances)
-    {
-        assert(artistToGenres.find(entry.first) == artistToGenres.end());
-        artistToGenres[entry.first] = {};
-        assert(artistToGenres.find(entry.first)->second.empty());
-    }
+    std::unordered_map<GenreName, uint32_t> genreNameToIndex;
+
+    std::vector<std::vector<uint32_t>> perArtistGenreIndices;
+    perArtistGenreIndices.resize(artistIDtoIndex.size());
 
     // again, request up to 50 ids at once
     std::string ids;
@@ -303,31 +311,40 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
 
     *progressName = "Downloading genre data";
     ArtistsResponse artistsResponse;
-    auto iter = artistOccurances.begin();
+    auto iter = artistIDtoIndex.begin();
+    assert(artistOccurances.size() == artistIDtoIndex.size());
     uint32_t artistCount = artistOccurances.size();
+
+    std::vector<uint32_t> artistIndices;
+    artistIndices.resize(50);
     for(int i = 0; i < artistCount; i += 50)
     {
         int requestSize = 0;
-        for(; requestSize < 50 && iter != artistOccurances.end(); requestSize++)
+        for(; requestSize < 50 && iter != artistIDtoIndex.end(); requestSize++)
         {
             ids += iter->first;
             ids += ',';
+            artistIndices[requestSize] = iter->second;
             iter++;
         }
         ids.pop_back(); // delete trailing comma
 
-        queryUrl = "https://api.spotify.com/v1/artists?ids=" + ids;
+        std::string queryURL = "https://api.spotify.com/v1/artists?ids=" + ids;
         cpr::Response r = cpr::Get(
-            cpr::Url(queryUrl),
+            cpr::Url(queryURL),
             cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
         artistsResponse = ArtistsResponse::load(r.text);
         assert(requestSize == artistsResponse.artists.size());
 
         auto& artists = artistsResponse.artists;
-        for(auto& artist : artists)
+        for(int j = 0; j < artists.size(); j++)
         {
-            auto artistToGenreIter = artistToGenres.find(artist.id);
-            assert(artistToGenreIter != artistToGenres.end());
+            auto& artist = artists[j];
+            uint32_t& artistIndex = artistIndices[j];
+
+            assert(artistIDtoIndex.find(artist.id)->second == artistIndex);
+            perArtistGenreIndices[artistIndex].reserve(artist.genres.size());
+
             for(auto& genreName : artist.genres)
             {
                 auto genreNameToIndexIter = genreNameToIndex.find(genreName);
@@ -345,9 +362,9 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
                     assert(emplaceResult.second);
                     genreNameToIndexIter = emplaceResult.first;
                 }
-                genreData[genreNameToIndexIter->second].occurances += artistOccurances[artist.id];
+                genreData[genreNameToIndexIter->second].occurances += artistOccurances[artistIndex];
                 // add reference back to artist!
-                artistToGenreIter->second.emplace_back(genreNameToIndexIter->second);
+                perArtistGenreIndices[artistIndex].emplace_back(genreNameToIndexIter->second);
             }
         }
 
@@ -383,16 +400,16 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
     // all artists bitsets
     // But for now, just do a simple double loop. (at least this definitly uses less memory)
     assert(genreData.size() == genreNameToIndex.size());
-    for(auto& track : playlist)
+    for(int i = 0; i < tracks.size(); i++)
     {
+        Track& track = tracks[i];
         track.genreMask = DynBitset{static_cast<uint32_t>(genreData.size())};
-        for(auto& artistId : track.artistIds)
+        for(uint32_t& artistIndex : perTrackArtistIndices[i])
         {
-            assert(artistToGenres.find(artistId) != artistToGenres.end());
-            std::vector<uint32_t>& genreIndexVector = artistToGenres.find(artistId)->second;
-            for(uint32_t& index : genreIndexVector)
+            for(uint32_t& genreDataIndex : perArtistGenreIndices[artistIndex])
             {
-                track.genreMask.setBit(genreData[index].sortedIndex);
+                const GenreData& data = genreData[genreDataIndex];
+                track.genreMask.setBit(data.sortedIndex);
             }
         }
     }
@@ -406,7 +423,7 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         sortedGenres[genreProxy->sortedIndex] = *genreProxy->name;
     }
 
-    return std::make_tuple(std::move(playlist), std::move(coverTable), std::move(sortedGenres));
+    return std::make_tuple(std::move(tracks), std::move(coverTable), std::move(sortedGenres));
 }
 
 json SpotifyApiAccess::getAlbum(const std::string& albumId)

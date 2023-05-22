@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glad/glad.h>
-
 #include <array>
 #include <iostream>
 #include <string>
@@ -28,7 +26,6 @@ struct Track
     std::string trackNameEncoded;
     std::wstring trackName;
 
-    std::vector<std::string> artistIds;
     std::string artistsNamesEncoded;
     std::wstring artistsNames;
 

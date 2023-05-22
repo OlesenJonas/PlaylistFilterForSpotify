@@ -28,7 +28,11 @@ class SpotifyApiAccess
     // todo: handle api errors
     // build the main playlist data, a vector of track objects and a map [Album ID -> CoverInfo Struct]
     // (stores texture handle etc)
-    std::tuple<std::vector<Track>, std::unordered_map<std::string, CoverInfo>, std::vector<std::string>>
+    using AlbumID = std::string;
+    using ArtistID = std::string;
+    using GenreName = std::string;
+    using CoverTable_t = std::unordered_map<AlbumID, CoverInfo, StringHash, std::equal_to<>>;
+    std::tuple<std::vector<Track>, CoverTable_t, std::vector<std::string>>
     buildPlaylistData(std::string_view playlistID, float* progressTracker, std::string* progressName);
     // get the Album json returned by the api
     json getAlbum(const std::string& albumId);
