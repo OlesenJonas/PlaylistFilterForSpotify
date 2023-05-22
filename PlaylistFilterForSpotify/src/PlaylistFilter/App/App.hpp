@@ -83,6 +83,7 @@ class App
     void refreshFilteredTracks();
 
     void extendPinsByRecommendations();
+    void extendPinsByArtists();
 
     void createPlaylist(const std::vector<Track*>& tracks);
 
@@ -120,6 +121,8 @@ class App
     SpotifyApiAccess::CoverTable_t coverTable;
 
     std::vector<std::string> genreNames;
+    std::vector<std::string> artistIds;
+    SpotifyApiAccess::ArtistIndexLUT_t artistIdToIndex;
 
     // Filtering related variables
     DynBitset currentGenreMask;

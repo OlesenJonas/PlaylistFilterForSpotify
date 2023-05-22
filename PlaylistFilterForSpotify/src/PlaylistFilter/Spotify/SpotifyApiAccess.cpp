@@ -2,6 +2,7 @@
 #include "ApiError.hpp"
 #include "ApiResponses.hpp"
 #include "Spotify/ApiResponses.hpp"
+#include "Spotify/SpotifyApiAccess.hpp"
 #include "secrets.hpp"
 #include <CommonStructs/CommonStructs.hpp>
 #include <DynamicBitset/DynamicBitset.hpp>
@@ -118,7 +119,12 @@ void SpotifyApiAccess::refreshAccessToken()
     access_token = r_json["access_token"].get<std::string>();
 }
 
-std::tuple<std::vector<Track>, SpotifyApiAccess::CoverTable_t, std::vector<std::string>>
+std::tuple<
+    std::vector<Track>,
+    SpotifyApiAccess::CoverTable_t,
+    std::vector<std::string>,
+    std::vector<SpotifyApiAccess::ArtistID>,
+    SpotifyApiAccess::ArtistIndexLUT_t>
 SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progressTracker, std::string* progressName)
 {
     cpr::Response r = cpr::Get(
@@ -404,8 +410,10 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
     {
         Track& track = tracks[i];
         track.genreMask = DynBitset{static_cast<uint32_t>(genreData.size())};
+        track.artistMask = DynBitset{static_cast<uint32_t>(artistIDtoIndex.size())};
         for(uint32_t& artistIndex : perTrackArtistIndices[i])
         {
+            track.artistMask.setBit(artistIndex);
             for(uint32_t& genreDataIndex : perArtistGenreIndices[artistIndex])
             {
                 const GenreData& data = genreData[genreDataIndex];
@@ -423,7 +431,19 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         sortedGenres[genreProxy->sortedIndex] = *genreProxy->name;
     }
 
-    return std::make_tuple(std::move(tracks), std::move(coverTable), std::move(sortedGenres));
+    std::vector<ArtistID> artistIds;
+    artistIds.resize(artistIDtoIndex.size());
+    for(auto& entry : artistIDtoIndex)
+    {
+        artistIds[entry.second] = entry.first;
+    }
+
+    return std::make_tuple(
+        std::move(tracks),
+        std::move(coverTable),
+        std::move(sortedGenres),
+        std::move(artistIds),
+        std::move(artistIDtoIndex));
 }
 
 json SpotifyApiAccess::getAlbum(const std::string& albumId)
@@ -552,4 +572,28 @@ std::vector<std::string> SpotifyApiAccess::getRecommendations(std::vector<std::s
     }
     // std::cout << std::endl << std::endl;
     return result;
+}
+
+std::vector<std::string> SpotifyApiAccess::getRelatedArtists(const std::string& artistId)
+{
+    std::string queryURL = "https://api.spotify.com/v1/artists/" + artistId + "/related-artists";
+    cpr::Response r = cpr::Get(
+        cpr::Url(queryURL),
+        cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
+    if(r.status_code != 200)
+    {
+        std::cout << "API rate limit reached" << std::endl;
+        return {};
+    }
+    // todo: replace for improved performance but dont want to deal with daw_json atm
+    json r_json = json::parse(r.text);
+    const auto& artists = r_json["artists"];
+    std::vector<std::string> relatedIds;
+    relatedIds.reserve(artists.size());
+    for(const auto& entry : artists)
+    {
+        // todo: should be ID instead !!
+        relatedIds.emplace_back(entry["id"].get<std::string>());
+    }
+    return relatedIds;
 }

@@ -460,12 +460,19 @@ void App::createMainUI()
                 }
 
                 // todo: un-hardcode these offsets (depend on text (-> button/sliders) sizes)
-                ImGui::SameLine(pinnedTracksTable.width - renderer.scaleByDPI(952.f));
-                if(ImGui::Button("Recommend tracks to pin"))
+                ImGui::SameLine(pinnedTracksTable.width - renderer.scaleByDPI(1000.f));
+                ImGui::Text("Recommend tracks to pin:");
+                ImGui::SameLine();
+                if(ImGui::Button("Based on tracks"))
                 {
                     extendPinsByRecommendations();
                 }
-                ImGui::SameLine(pinnedTracksTable.width - renderer.scaleByDPI(790.f));
+                ImGui::SameLine();
+                if(ImGui::Button("Based on artists"))
+                {
+                    extendPinsByArtists();
+                }
+                ImGui::SameLine();
                 ImGui::SetNextItemWidth(renderer.scaleByDPI(100.0f));
                 ImGui::SliderInt("Accuracy", &recommendAccuracy, 1, 5, "");
                 ImGui::SameLine();

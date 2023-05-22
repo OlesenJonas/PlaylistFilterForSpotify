@@ -32,7 +32,8 @@ class SpotifyApiAccess
     using ArtistID = std::string;
     using GenreName = std::string;
     using CoverTable_t = std::unordered_map<AlbumID, CoverInfo, StringHash, std::equal_to<>>;
-    std::tuple<std::vector<Track>, CoverTable_t, std::vector<std::string>>
+    using ArtistIndexLUT_t = std::unordered_map<ArtistID, uint32_t, StringHash, std::equal_to<>>;
+    std::tuple<std::vector<Track>, CoverTable_t, std::vector<GenreName>, std::vector<ArtistID>, ArtistIndexLUT_t>
     buildPlaylistData(std::string_view playlistID, float* progressTracker, std::string* progressName);
     // get the Album json returned by the api
     json getAlbum(const std::string& albumId);
@@ -50,6 +51,8 @@ class SpotifyApiAccess
     void createPlaylist(std::string_view name, const std::vector<std::string>& trackUris);
     // Get the Ids of track recommendations based on up to 5 input track Ids
     std::vector<std::string> getRecommendations(std::vector<std::string_view>& seedIds);
+
+    std::vector<std::string> getRelatedArtists(const std::string& artistId);
 
   private:
     std::string state;

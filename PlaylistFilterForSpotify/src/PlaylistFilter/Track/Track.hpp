@@ -55,6 +55,7 @@ struct Track
     CoverInfo* coverInfoPtr = nullptr;
 
     DynBitset genreMask;
+    DynBitset artistMask;
 
     void decodeNames();
 };

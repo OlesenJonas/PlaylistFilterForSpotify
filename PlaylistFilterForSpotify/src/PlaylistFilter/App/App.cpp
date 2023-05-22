@@ -69,7 +69,7 @@ void App::loadSelectedPlaylist()
 {
     // have to use std::tie for now since CLANG doesnt allow for structured bindings to be captured in
     // lambda can switch back if lambda refactored into function
-    std::tie(playlist, coverTable, genreNames) =
+    std::tie(playlist, coverTable, genreNames, artistIds, artistIdToIndex) =
         apiAccess.buildPlaylistData(playlistID, &loadPlaylistProgress, &loadingPlaylistProgressLabel);
     // auto [playlist, coverTable] = apiAccess.buildPlaylistData(playlistID);
 
@@ -348,6 +348,58 @@ void App::extendPinsByRecommendations()
     showRecommendations = true;
     renderer.highlightWindow("Pin Recommendations");
 };
+
+void App::extendPinsByArtists()
+{
+    DynBitset pinnedArtists = pinnedTracks[0]->artistMask;
+    for(int i = 1; i < pinnedTracks.size(); i++)
+    {
+        pinnedArtists = pinnedArtists | pinnedTracks[i]->artistMask;
+    }
+    std::vector<std::string> pinnedArtistIds;
+    DynBitset temp = pinnedArtists;
+    while(temp)
+    {
+        uint32_t artistIndex = temp.getFirstBitSet();
+        temp.clearBit(artistIndex);
+        pinnedArtistIds.emplace_back(artistIds[artistIndex]);
+    }
+
+    DynBitset recommendedArtists{(uint32_t)artistIds.size()};
+    std::vector<std::string> recommendedIds;
+    for(const auto& artistId : pinnedArtistIds)
+    {
+        recommendedIds = apiAccess.getRelatedArtists(artistId);
+
+        for(const auto& recommendedId : recommendedIds)
+        {
+            auto artistIdToIndexIter = artistIdToIndex.find(recommendedId);
+            if(artistIdToIndexIter != artistIdToIndex.end())
+            {
+                uint32_t index = artistIdToIndexIter->second;
+                recommendedArtists.setBit(index);
+            }
+        }
+    }
+
+    // Also recommend other songs from artists themselves!
+    recommendedArtists = recommendedArtists | pinnedArtists;
+
+    // Now find songs that were made by (at least) one of those artists
+
+    recommendedTracks.clear();
+    for(Track& track : playlist)
+    {
+        if((track.artistMask & recommendedArtists))
+        {
+            // if true, then any bit still set after "&"
+            //       -> theres at least one match
+            recommendedTracks.emplace_back(&track, 1);
+        }
+    }
+    showRecommendations = true;
+    renderer.highlightWindow("Pin Recommendations");
+}
 
 void App::generateGraphingData()
 {
