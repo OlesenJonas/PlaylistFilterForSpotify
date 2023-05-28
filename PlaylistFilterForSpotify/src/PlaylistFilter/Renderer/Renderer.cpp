@@ -76,27 +76,62 @@ Renderer::Renderer(App& app) : app(app)
     ImGuiIO& io = ImGui::GetIO();
     ImGui::GetStyle().ScaleAllSizes(dpiScale);
 
-#ifdef WIN32
-    ImFont* defaultFont =
-        io.Fonts->AddFontFromFileTTF("C:/WINDOWS/Fonts/verdana.ttf", FONT_SIZE, nullptr, nullptr);
-#else
-    #error No font selected for non win32 systems
-#endif
     // need a font that supports all requested special symbols:
     // list of fonts supporting a symbol can be found here:
     // https://www.fileformat.info/info/unicode/char/25B6/fontsupport.htm
     // alternativly render those symbols as actual (non glyph) textures instead (should be more portable, but
     // font-based more convenient atm)
-    ImVector<ImWchar> unicodeRanges;
-    ImFontGlyphRangesBuilder fgrBuilder;
-    fgrBuilder.AddChar(0x25B6);
-    fgrBuilder.AddChar(0x21BA);
-    fgrBuilder.BuildRanges(&unicodeRanges);
+
+    ImVector<ImWchar> defaultUnicodeRanges;
+    ImFontGlyphRangesBuilder defaultFgrBuilder;
+    defaultFgrBuilder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+    defaultFgrBuilder.AddChar(0x25B6);
+    defaultFgrBuilder.AddChar(0x21BA);
+    defaultFgrBuilder.BuildRanges(&defaultUnicodeRanges);
+    ImFontConfig defaultUnicodeFontConfig;
+    ImFont* defaultFont = io.Fonts->AddFontFromFileTTF(
+        MISC_PATH "/Fonts/DejaVuSans.ttf", FONT_SIZE, &defaultUnicodeFontConfig, defaultUnicodeRanges.Data);
+
+    ImVector<ImWchar> japUnicodeRanges;
+    ImFontGlyphRangesBuilder japFgrBuilder;
+    japFgrBuilder.AddRanges(io.Fonts->GetGlyphRangesJapanese());
+    japFgrBuilder.BuildRanges(&japUnicodeRanges);
     // merge font instead of loading as seperate, saves Push/PopFont() calls
-    ImFontConfig unicodeFontConfig;
-    unicodeFontConfig.MergeMode = true;
-    ImFont* unicodeFont = io.Fonts->AddFontFromFileTTF(
-        MISC_PATH "/DejaVuSans.ttf", FONT_SIZE, &unicodeFontConfig, unicodeRanges.Data);
+    ImFontConfig japFontConfig;
+    japFontConfig.MergeMode = true;
+    ImFont* japFont = io.Fonts->AddFontFromFileTTF(
+        MISC_PATH "/Fonts/NotoSansJP-Regular.ttf", FONT_SIZE, &japFontConfig, japUnicodeRanges.Data);
+
+    ImVector<ImWchar> krUnicodeRanges;
+    ImFontGlyphRangesBuilder krFgrBuilder;
+    krFgrBuilder.AddRanges(io.Fonts->GetGlyphRangesKorean());
+    krFgrBuilder.BuildRanges(&krUnicodeRanges);
+    // merge font instead of loading as seperate, saves Push/PopFont() calls
+    ImFontConfig krFontConfig;
+    krFontConfig.MergeMode = true;
+    ImFont* krFont = io.Fonts->AddFontFromFileTTF(
+        MISC_PATH "/Fonts/NotoSansKR-Regular.otf", FONT_SIZE, &krFontConfig, krUnicodeRanges.Data);
+
+    ImVector<ImWchar> scUnicodeRanges;
+    ImFontGlyphRangesBuilder scFgrBuilder;
+    scFgrBuilder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+    scFgrBuilder.BuildRanges(&scUnicodeRanges);
+    // merge font instead of loading as seperate, saves Push/PopFont() calls
+    ImFontConfig scFontConfig;
+    scFontConfig.MergeMode = true;
+    ImFont* scFont = io.Fonts->AddFontFromFileTTF(
+        MISC_PATH "/Fonts/NotoSansSC-Regular.otf", FONT_SIZE, &scFontConfig, scUnicodeRanges.Data);
+
+    ImVector<ImWchar> tcUnicodeRanges;
+    ImFontGlyphRangesBuilder tcFgrBuilder;
+    tcFgrBuilder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());
+    tcFgrBuilder.BuildRanges(&tcUnicodeRanges);
+    // merge font instead of loading as seperate, saves Push/PopFont() calls
+    ImFontConfig tcFontConfig;
+    tcFontConfig.MergeMode = true;
+    ImFont* tcFont = io.Fonts->AddFontFromFileTTF(
+        MISC_PATH "/Fonts/NotoSansSC-Regular.otf", FONT_SIZE, &tcFontConfig, tcUnicodeRanges.Data);
+
     io.Fonts->Build();
 
     ImGui::StyleColorsDark();
