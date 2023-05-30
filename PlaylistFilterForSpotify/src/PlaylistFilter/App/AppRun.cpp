@@ -401,13 +401,13 @@ void App::createMainUI()
                nullptr,
                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
         {
-            if(ImGui::Button("Stop Playback"))
-            {
-                apiAccess.stopPlayback();
-            }
+            // if(ImGui::Button("Stop Playback"))
+            // {
+            //     apiAccess.stopPlayback();
+            // }
             if(canLoadCovers)
             {
-                ImGui::SameLine();
+                // ImGui::SameLine();
                 if(ImGui::Button("Load Covers"))
                 {
                     canLoadCovers = false;
