@@ -383,13 +383,14 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
     ids.reserve(50 * 22 + 50);
 
     *progressName = "Downloading genre data";
-    ArtistsResponse artistsResponse;
+
     auto iter = artistIDtoIndex.begin();
     assert(artistOccurances.size() == artistIDtoIndex.size());
     uint32_t artistCount = artistOccurances.size();
 
     std::vector<uint32_t> artistIndices;
-    artistIndices.resize(50);
+
+    std::vector<cpr::AsyncResponse> asyncGenreResponses;
     for(int i = 0; i < artistCount; i += 50)
     {
         int requestSize = 0;
@@ -397,23 +398,39 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         {
             ids += iter->first;
             ids += ',';
-            artistIndices[requestSize] = iter->second;
+            artistIndices.emplace_back(iter->second);
             iter++;
         }
         ids.pop_back(); // delete trailing comma
 
         std::string queryURL = "https://api.spotify.com/v1/artists?ids=" + ids;
-        cpr::Response r = cpr::Get(
+        asyncGenreResponses.emplace_back(cpr::GetAsync(
             cpr::Url(queryURL),
-            cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
+            cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}}));
+
+        ids.clear();
+    }
+
+    ArtistsResponse artistsResponse;
+    for(int i = 0; i < asyncGenreResponses.size(); i++)
+    {
+        cpr::Response r = asyncGenreResponses[i].get();
+        // find a way to re-queue requests that werent fulfilled correctly
+        if(r.status_code != 200)
+        {
+            // todo: differentiate between different error types
+            assert(false);
+        }
+
         artistsResponse = ArtistsResponse::load(r.text);
-        assert(requestSize == artistsResponse.artists.size());
 
         auto& artists = artistsResponse.artists;
         for(int j = 0; j < artists.size(); j++)
         {
             auto& artist = artists[j];
-            uint32_t& artistIndex = artistIndices[j];
+            // todo: this needed? (ie, check again what artistIndices was used for and if its still needed!)
+            uint32_t artistIndexInRequest = i * 50 + j;
+            uint32_t& artistIndex = artistIndices[artistIndexInRequest];
 
             assert(artistIDtoIndex.find(artist.id)->second == artistIndex);
             perArtistGenreIndices[artistIndex].reserve(artist.genres.size());
@@ -442,8 +459,6 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         }
 
         *progressTracker = static_cast<float>(i) / static_cast<float>(artistCount);
-
-        ids.clear();
     }
     *progressTracker = 1.0f;
 
