@@ -8,9 +8,12 @@
 #include <DynamicBitset/DynamicBitset.hpp>
 
 #include <chrono>
+#include <cpr/api.h>
 #include <cpr/body.h>
 #include <cpr/payload.h>
 #include <cpr/response.h>
+#include <cpr/session.h>
+#include <execution>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -162,12 +165,12 @@ std::tuple<
     SpotifyApiAccess::ArtistIndexLUT_t>
 SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progressTracker, std::string* progressName)
 {
-    cpr::Response r = cpr::Get(
+    cpr::Response totalCountRequest = cpr::Get(
         cpr::Url(
             "https://api.spotify.com/v1/playlists/" + std::string(playlistID) + "/tracks?limit=50&fields=total"),
         cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
 
-    ResponseTotal responseTotal = ResponseTotal::load(r.text);
+    ResponseTotal responseTotal = ResponseTotal::load(totalCountRequest.text);
     uint32_t totalAmountOfTracks = responseTotal.total;
     int requestCountLimit = 50;
     uint32_t trackRequestsAmount = (totalAmountOfTracks + requestCountLimit - 1) / requestCountLimit;
@@ -175,16 +178,16 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
     uint32_t tracksLoaded = 0;
 
     std::vector<Track> tracks;
-    tracks.reserve(totalAmountOfTracks);
+    tracks.resize(totalAmountOfTracks);
 
     CoverTable_t coverTable;
 
     // todo: Doesnt work if an item in the playlist is an episode instead of a song!
-    std::string initialQuery =
-        "https://api.spotify.com/v1/playlists/" + std::string(playlistID) +
-        "/tracks?limit=" + std::to_string(requestCountLimit) +
+    std::string queryURL_start =
+        "https://api.spotify.com/v1/playlists/" + std::string(playlistID) + "/tracks?offset=";
+    std::string queryURL_end =
+        "&limit=" + std::to_string(requestCountLimit) +
         "&fields=next,items(track(name,id,artists(name,id),popularity,album(id,name,images)))";
-    PlaylistTracksResponse response;
 
     uint32_t freeArtistIDIndex = 0;
     std::vector<uint32_t> artistOccurances;
@@ -193,28 +196,36 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
     std::vector<std::vector<uint32_t>> perTrackArtistIndices;
     perTrackArtistIndices.resize(totalAmountOfTracks);
 
+    std::vector<cpr::AsyncResponse> asyncResponses;
+    for(int i = 0; i < trackRequestsAmount; i++)
+    {
+        const std::string queryURL = queryURL_start + std::to_string(i * requestCountLimit) + queryURL_end;
+
+        // todo: use MultiGetAsync?
+        // https://docs.libcpr.org/advanced-usage.html#:~:text=endl%3B%0A%7D-,Alternatively,-%2C%20you%20can%20use
+        asyncResponses.emplace_back(cpr::GetAsync(
+            cpr::Url(queryURL),
+            cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}}));
+    }
+
+    std::vector<cpr::AsyncResponse> asyncAudioFeatureResponses;
+
+    PlaylistTracksResponse response;
     TracksFeaturesResponse audioFeatureResponse;
     for(int i = 0; i < trackRequestsAmount; i++)
     {
-        if(i != 0)
-            assert(response.next.has_value());
-        std::string queryURL = i == 0 ? initialQuery : response.next.value();
-
-        cpr::Response r = cpr::Get(
-            cpr::Url(queryURL),
-            cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
-
-        // todo: check for response type (wrong access token, wrong request) first, instead of just throwing!
-        if(r.status_code == 429)
+        cpr::Response r = asyncResponses[i].get();
+        // find a way to re-queue requests that werent fulfilled correctly
+        if(r.status_code != 200)
         {
-            throw UnknownApiError();
+            // todo: differentiate between different error types
+            assert(false);
         }
+
         response = PlaylistTracksResponse::load(r.text);
-        // now that all responses are being stored, shrink to fit?
 
         uint32_t tracksInRequest = response.items.size();
 
-        // todo: could also move this outside of loop! (just cant use pop_back anymore)
         std::string trackIds;
         // Lengh of spotify IDs (I think, but cant find specification for it in API atm)
         const int idLength = 22;
@@ -228,7 +239,7 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         {
             const int trackIndex = i * requestCountLimit + j;
             const auto& trackResponse = response.items[j].track;
-            Track& track = tracks.emplace_back();
+            Track& track = tracks[trackIndex];
             assert(std::distance(tracks.data(), &track) == trackIndex);
             track.index = trackIndex;
 
@@ -298,10 +309,31 @@ SpotifyApiAccess::buildPlaylistData(std::string_view playlistID, float* progress
         trackIds.pop_back();
 
         // Now retrieve audio featres from api (for the same batch of ids as the playlist tracks request)
-        queryURL = "https://api.spotify.com/v1/audio-features?ids=" + trackIds;
-        r = cpr::Get(
+        std::string queryURL = "https://api.spotify.com/v1/audio-features?ids=" + trackIds;
+        asyncAudioFeatureResponses.emplace_back(cpr::GetAsync(
             cpr::Url(queryURL),
-            cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}});
+            cpr::Header{{"Content-Type", "application/json"}, {"Authorization", "Bearer " + access_token}}));
+
+        tracksLoaded += requestCountLimit;
+        *progressTracker = static_cast<float>(tracksLoaded) / static_cast<float>(totalAmountOfTracks);
+        *progressTracker = std::min(*progressTracker, 1.0f);
+    }
+
+    *progressName = "Retrieving audio features";
+    tracksLoaded = 0;
+
+    assert(trackRequestsAmount == asyncAudioFeatureResponses.size());
+    // this whole thing could be done asynchronously
+    for(int i = 0; i < trackRequestsAmount; i++)
+    {
+        cpr::Response r = asyncAudioFeatureResponses[i].get();
+        // find a way to re-queue requests that werent fulfilled correctly
+        if(r.status_code != 200)
+        {
+            // todo: differentiate between different error types
+            assert(false);
+        }
+
         audioFeatureResponse = TracksFeaturesResponse::load(r.text);
         for(auto j = 0; j < audioFeatureResponse.audioFeatures.size(); j++)
         {
