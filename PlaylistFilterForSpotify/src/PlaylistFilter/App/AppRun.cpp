@@ -396,15 +396,9 @@ void App::createMainUI()
         ImGui::ShowDemoWindow(&show_demo_window);
 #endif
 
-        if(ImGui::Begin(
-               "Playlist Data | Tab to toggle window visibility",
-               nullptr,
-               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+        if(ImGui::Begin("Playlist Data | Tab to toggle window visibility", nullptr, ImGuiWindowFlags_NoCollapse))
         {
-            // if(ImGui::Button("Stop Playback"))
-            // {
-            //     apiAccess.stopPlayback();
-            // }
+            float fullWindowContentHeight = ImGui::GetContentRegionAvail().y;
             if(canLoadCovers)
             {
                 // ImGui::SameLine();
@@ -444,14 +438,23 @@ void App::createMainUI()
                         }
                     }
                 }
+                ImGui::Separator();
             }
             if(!canLoadCovers && coversLoaded != coversTotal)
             {
                 ImGui::ProgressBar(static_cast<float>(coversLoaded) / coversTotal);
+                ImGui::Separator();
             }
-            ImGui::Separator();
 
-            pinnedTracksTable.draw();
+            ImGui::Text("Pinned Tracks: %d", static_cast<int>(pinnedTracks.size()));
+
+            float windowContentHeightAfterCover = ImGui::GetContentRegionAvail().y;
+            float pinnedTracksTableHeight = 0.3f * windowContentHeightAfterCover;
+            pinnedTracksTableHeight = std::min<float>(
+                pinnedTracksTableHeight,
+                pinnedTracksTable.rowSize.y * (std::max<int>(1, pinnedTracks.size()) + 0.7f));
+
+            pinnedTracksTable.draw(pinnedTracksTableHeight);
             if(!pinnedTracks.empty())
             {
                 if(ImGui::Button("Export to playlist##pins"))
@@ -463,7 +466,7 @@ void App::createMainUI()
 
                 static float recommendationsWidth = renderer.scaleByDPI(1000.f);
                 float regionAvail = ImGui::GetContentRegionAvailWidth();
-                ImGui::SameLine((ImGui::GetContentRegionAvailWidth() - recommendationsWidth) / 2.0f);
+                ImGui::SameLine((regionAvail - recommendationsWidth) / 2.0f);
                 // ImGui::SameLine();
                 ImGui::BeginGroup();
                 {
@@ -498,7 +501,7 @@ void App::createMainUI()
                 recommendationsWidth = ImGui::GetItemRectSize().x;
 
                 static float createFilterWidth = renderer.scaleByDPI(189.f);
-                ImGui::SameLine(pinnedTracksTable.width - createFilterWidth);
+                ImGui::SameLine(regionAvail - createFilterWidth);
                 if(ImGui::Button("Create filters from pinned tracks"))
                 {
                     // todo: XYZ(vector<Track*> v) that fills filter
@@ -520,7 +523,13 @@ void App::createMainUI()
             }
             ImGui::Separator();
 
-            filteredTracksTable.draw();
+            ImGui::Text("Filtered Tracks: %d", static_cast<int>(filteredTracks.size()));
+
+            float windowContentHeightForFiltered = ImGui::GetContentRegionAvail().y;
+            float filteredTracksTableHeight = windowContentHeightForFiltered - ImGui::GetFrameHeight() -
+                                              0.5f * ImGui::GetStyle().WindowPadding.y;
+
+            filteredTracksTable.draw(filteredTracksTableHeight);
             if(ImGui::Button("Export to playlist"))
             {
                 // todo: promt popup to ask for PL name

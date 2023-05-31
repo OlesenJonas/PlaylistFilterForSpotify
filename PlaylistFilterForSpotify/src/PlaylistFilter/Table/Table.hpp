@@ -19,11 +19,14 @@ class Table
     Table(Table&&) = delete;                  // move constr
     Table& operator=(Table&& other) = delete; // move assign
 
-    void draw();
+    void draw(float height);
     void calcHeaderWidth();
     void sortData();
 
     float width = 0.f;
+
+    float coverSize = 40.0f;
+    ImVec2 rowSize{0.0f, coverSize};
 
   protected:
     Table(App& p_app, std::vector<Track*>& p_tracks);
@@ -36,9 +39,6 @@ class Table
     const char* lastColumnID = "";
     virtual void lastColumnButton(int row, int* flag) = 0;
     virtual void additionalLogic() = 0;
-
-    float coverSize = 40.0f;
-    ImVec2 rowSize{0.0f, coverSize};
 
     static constexpr ImGuiTableFlags flags = //
         ImGuiTableFlags_ScrollY |            //

@@ -113,14 +113,12 @@ void Table::sortData()
     }
 }
 
-void Table::draw()
+void Table::draw(float height)
 {
     assert(strcmp(tableName, "") != 0);
     assert(strcmp(lastColumnID, "") != 0);
 
-    ImGui::Text("%s: %d", tableName, static_cast<int>(tracks.size()));
-
-    const ImVec2 outer_size = getTableSize();
+    const ImVec2 outer_size = ImVec2(0, height);
     if(ImGui::BeginTable(tableName, columnHeaders.size() + 1, flags, outer_size))
     {
         ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
