@@ -459,36 +459,46 @@ void App::createMainUI()
                     // todo: promt popup to ask for PL name
                     createPlaylist(pinnedTracks);
                 }
+                float buttonHeight = ImGui::GetItemRectSize().y;
 
-                // todo: un-hardcode these offsets (depend on text (-> button/sliders) sizes)
-                ImGui::SameLine(pinnedTracksTable.width - renderer.scaleByDPI(1000.f));
-                ImGui::Text("Recommend tracks to pin:");
-                ImGui::SameLine();
-                if(ImGui::Button("Based on tracks"))
+                static float recommendationsWidth = renderer.scaleByDPI(1000.f);
+                float regionAvail = ImGui::GetContentRegionAvailWidth();
+                ImGui::SameLine((ImGui::GetContentRegionAvailWidth() - recommendationsWidth) / 2.0f);
+                // ImGui::SameLine();
+                ImGui::BeginGroup();
                 {
-                    extendPinsByRecommendations();
-                }
-                ImGui::SameLine();
-                if(ImGui::Button("Based on artists"))
-                {
-                    extendPinsByArtists();
-                }
-                ImGui::SameLine();
-                ImGui::SetNextItemWidth(renderer.scaleByDPI(100.0f));
-                ImGui::SliderInt("Accuracy", &recommendAccuracy, 1, 5, "");
-                ImGui::SameLine();
-                ImGui::TextDisabled("(?)");
-                if(ImGui::IsItemHovered())
-                {
-                    ImGui::BeginTooltip();
-                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                    ImGui::TextUnformatted("Controls how accurate the recommendations will fit the pinned "
-                                           "tracks. Higher accuracy may give less results overall.");
-                    ImGui::PopTextWrapPos();
-                    ImGui::EndTooltip();
-                }
 
-                ImGui::SameLine(pinnedTracksTable.width - renderer.scaleByDPI(189.f));
+                    ImGui::Text("Recommend tracks to pin:");
+                    ImGui::SameLine();
+                    if(ImGui::Button("Based on tracks"))
+                    {
+                        extendPinsByRecommendations();
+                    }
+                    ImGui::SameLine();
+                    if(ImGui::Button("Based on artists"))
+                    {
+                        extendPinsByArtists();
+                    }
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(renderer.scaleByDPI(100.0f));
+                    ImGui::SliderInt("Accuracy", &recommendAccuracy, 1, 5, "");
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("(?)");
+                    if(ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                        ImGui::TextUnformatted("Controls how accurate the recommendations will fit the pinned "
+                                               "tracks. Higher accuracy may give less results overall.");
+                        ImGui::PopTextWrapPos();
+                        ImGui::EndTooltip();
+                    }
+                }
+                ImGui::EndGroup();
+                recommendationsWidth = ImGui::GetItemRectSize().x;
+
+                static float createFilterWidth = renderer.scaleByDPI(189.f);
+                ImGui::SameLine(pinnedTracksTable.width - createFilterWidth);
                 if(ImGui::Button("Create filters from pinned tracks"))
                 {
                     // todo: XYZ(vector<Track*> v) that fills filter
@@ -506,6 +516,7 @@ void App::createMainUI()
                     }
                     filterDirty = true;
                 }
+                createFilterWidth = ImGui::GetItemRectSize().x;
             }
             ImGui::Separator();
 
@@ -515,11 +526,14 @@ void App::createMainUI()
                 // todo: promt popup to ask for PL name
                 createPlaylist(filteredTracks);
             }
-            ImGui::SameLine(filteredTracksTable.width - renderer.scaleByDPI(35.f));
+            static float pinAllSize = renderer.scaleByDPI(45.f);
+            // ImGui::SameLine(filteredTracksTable.width - pinAllSize);
+            ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - pinAllSize);
             if(ImGui::Button("Pin all"))
             {
                 pinTracks(filteredTracks);
             }
+            pinAllSize = ImGui::GetItemRectSize().x;
         }
         ImGui::End(); // Playlist Data Window
 
