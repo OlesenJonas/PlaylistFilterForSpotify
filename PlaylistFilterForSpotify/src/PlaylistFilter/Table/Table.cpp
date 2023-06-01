@@ -249,21 +249,45 @@ void Table::draw(float height, bool updateColumnsState, bool stateToSet)
                 }
 
                 ImGui::TableSetColumnIndex(2);
+                auto startCoords = ImGui::GetCursorScreenPos();
+                auto cellSize = ImVec2(ImGui::GetContentRegionAvail().x, rowSize.y);
                 ImGui::TextUnformatted(tracks[row]->trackNameEncoded.c_str());
                 if(ImGui::IsItemClicked())
                 {
                     app.setSelectedTrack(tracks[row]);
                 }
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 160));
+                constexpr ImU32 albumNameColor = IM_COL32(255, 255, 255, 160);
+                ImGui::PushStyleColor(ImGuiCol_Text, albumNameColor);
                 ImGui::TextUnformatted(tracks[row]->albumNameEncoded.c_str());
                 if(ImGui::IsItemClicked())
                 {
                     app.setSelectedTrack(tracks[row]);
                 }
                 ImGui::PopStyleColor();
+                ImGui::SetCursorScreenPos(startCoords);
+                ImGui::InvisibleButton("##dummyButtonTrackName", cellSize);
+                if(ImGui::IsItemHovered() && GImGui->HoveredIdTimer > 0.3f)
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::TextUnformatted(tracks[row]->trackNameEncoded.c_str());
+                    ImGui::PushStyleColor(ImGuiCol_Text, albumNameColor);
+                    ImGui::TextUnformatted(tracks[row]->albumNameEncoded.c_str());
+                    ImGui::PopStyleColor();
+                    ImGui::EndTooltip();
+                }
 
                 ImGui::TableSetColumnIndex(3);
+                startCoords = ImGui::GetCursorScreenPos();
+                cellSize = ImVec2(ImGui::GetContentRegionAvail().x, rowSize.y);
                 ImGui::TextUnformatted(tracks[row]->artistsNamesEncoded.c_str());
+                ImGui::SetCursorScreenPos(startCoords);
+                ImGui::InvisibleButton("##dummyButtonArtists", cellSize);
+                if(ImGui::IsItemHovered() && GImGui->HoveredIdTimer > 0.3f)
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::TextUnformatted(tracks[row]->artistsNamesEncoded.c_str());
+                    ImGui::EndTooltip();
+                }
 
                 for(int i = 4; i < 11; i++)
                 {
