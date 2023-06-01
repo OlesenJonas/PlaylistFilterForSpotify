@@ -28,6 +28,10 @@ class App
     void toggleWindowVisibility();
     int getLastPlayedTrackIndex();
     bool startTrackPlayback(Track* track);
+    inline int getNumberOfTracks()
+    {
+        return playlist.size();
+    }
 
     // returns true, if the genre with given passes the current filter
     bool genrePassesFilter(uint32_t index);

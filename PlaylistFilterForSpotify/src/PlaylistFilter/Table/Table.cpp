@@ -56,8 +56,30 @@ void Table::calcHeaderWidth()
     coverSize = renderer.scaleByDPI(coverSize);
     rowSize = {0.0f, coverSize};
 
+    // should be more than enough digits
+    std::string numbersLength = "88888888888888888";
+    int maxNumber = app.getNumberOfTracks();
+    int maxNumberOfDigits = 0;
+    if(maxNumber < 10)
+        maxNumberOfDigits = 1;
+    else if(maxNumber < 100)
+        maxNumberOfDigits = 2;
+    else if(maxNumber < 1000)
+        maxNumberOfDigits = 3;
+    else if(maxNumber < 10000)
+        maxNumberOfDigits = 4;
+    else if(maxNumber < 100000)
+        maxNumberOfDigits = 5;
+    else
+        assert(false);
+
+    maxNumberOfDigits = std::max(maxNumberOfDigits, 4);
+    std::string longestStringOfDigits = numbersLength.substr(0, maxNumberOfDigits);
+
     columnHeaders = {
-        {"#", ImGuiTableColumnFlags_NoHide, coverSize},
+        {"#",
+         ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed,
+         ImGui::CalcTextSize(longestStringOfDigits.c_str()).x},
         {"Cover",
          ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
              ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_NoHeaderLabel,

@@ -179,6 +179,8 @@ void App::runPlaylistLoad()
         renderer.createRenderData();
         renderer.uploadGraphingData(graphingData);
         state = State::MAIN;
+        filteredTracksTable.calcHeaderWidth();
+        pinnedTracksTable.calcHeaderWidth();
     }
 }
 void App::createPlaylistLoadUI()
