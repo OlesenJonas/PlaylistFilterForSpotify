@@ -214,6 +214,24 @@ void App::runMain()
 
     createMainUI();
 
+    if(clearPinsAfterFrame)
+    {
+        pinnedTracks.clear();
+        clearPinsAfterFrame = false;
+    }
+    if(pinAllAfterFrame)
+    {
+        // todo: optimize for *large* counts
+        for(Track* track : filteredTracks)
+        {
+            if(std::find(pinnedTracks.begin(), pinnedTracks.end(), track) == pinnedTracks.end())
+            {
+                pinnedTracks.push_back(track);
+            }
+        }
+        pinAllAfterFrame = false;
+    }
+
     renderer.draw3DGraph(
         coverSize3D,
         featureMinMaxValues[graphingFeatureX],
@@ -550,14 +568,9 @@ void App::createMainUI()
                 createPlaylist(filteredTracks);
             }
             float exportWidth = ImGui::GetItemRectSize().x;
-            static float pinAllWidth = renderer.scaleByDPI(45.f);
             static float audioFeatureButtonsWidth = 0.f;
 
-            float freeSpaceInMiddle =
-                fullWindowContentSize.x - exportWidth - pinAllWidth - 2 * ImGui::GetStyle().ItemSpacing.x;
-            ImGui::SameLine(
-                exportWidth + 2 * ImGui::GetStyle().ItemSpacing.x +
-                (freeSpaceInMiddle - audioFeatureButtonsWidth) / 2);
+            ImGui::SameLine(fullWindowContentSize.x - audioFeatureButtonsWidth + ImGui::GetStyle().ItemSpacing.x);
             ImGui::BeginGroup();
             {
                 ImGui::Text("Audio feature columns:");
@@ -577,17 +590,9 @@ void App::createMainUI()
             ImGui::EndGroup();
             audioFeatureButtonsWidth = ImGui::GetItemRectSize().x;
 
-            // ImGui::SameLine(filteredTracksTable.width - pinAllSize);
-            ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - pinAllWidth + ImGui::GetStyle().ItemSpacing.x);
-            if(ImGui::Button("Pin all"))
-            {
-                pinTracks(filteredTracks);
-            }
-            pinAllWidth = ImGui::GetItemRectSize().x;
-
             minWindowWidth = std::max<float>(
                 minWindowWidth,
-                exportWidth + audioFeatureButtonsWidth + pinAllWidth + (2 + 2) * ImGui::GetStyle().ItemSpacing.x);
+                exportWidth + audioFeatureButtonsWidth + (2 + 1) * ImGui::GetStyle().ItemSpacing.x);
         }
         ImGui::End(); // Playlist Data Window
         ImGui::PopStyleVar();

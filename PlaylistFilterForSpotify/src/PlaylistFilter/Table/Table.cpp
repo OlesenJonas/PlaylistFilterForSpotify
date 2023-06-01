@@ -8,14 +8,14 @@
 PinnedTracksTable::PinnedTracksTable(App& p_app, std::vector<Track*>& p_tracks) : Table(p_app, p_tracks)
 {
     tableName = "Pinned Tracks";
-    lastColumnID = "##unpin";
+    lastColumnButtonName = "Unpin all";
     hiddenPlayButtonID = "hiddenPlayButton##pinned";
 }
 
 FilteredTracksTable::FilteredTracksTable(App& p_app, std::vector<Track*>& p_tracks) : Table(p_app, p_tracks)
 {
     tableName = "Filtered Tracks";
-    lastColumnID = "##pin";
+    lastColumnButtonName = "Pin all";
     hiddenPlayButtonID = "hiddenPlayButton##filtered";
 }
 
@@ -31,7 +31,7 @@ ImVec2 FilteredTracksTable::getTableSize()
 
 void PinnedTracksTable::lastColumnButton(int row, float buttonWidth, int* flag)
 {
-    if(ImGui::Button("Unpin"))
+    if(ImGui::Button("Unpin", ImVec2(buttonWidth, 0)))
     {
         *flag = row;
     }
@@ -43,6 +43,16 @@ void FilteredTracksTable::lastColumnButton(int row, float buttonWidth, int* flag
     {
         app.pinTrack(tracks[row]);
     }
+}
+
+void PinnedTracksTable::lastColumnHeaderButtonAction()
+{
+    app.clearPinsAfterFrame = true;
+}
+
+void FilteredTracksTable::lastColumnHeaderButtonAction()
+{
+    app.pinAllAfterFrame = true;
 }
 
 Table::Table(App& p_app, std::vector<Track*>& p_tracks) : app(p_app), tracks(p_tracks)
@@ -122,16 +132,20 @@ void Table::sortData()
 void Table::draw(float height, bool updateColumnsState, bool stateToSet)
 {
     assert(strcmp(tableName, "") != 0);
-    assert(strcmp(lastColumnID, "") != 0);
+    assert(strcmp(lastColumnButtonName, "") != 0);
 
-    static bool firstFrame = true;
-    static float unpinButtonWidth = 0.0f;
-    if(firstFrame)
-    {
-        ImGui::Button("Unpin");
-        unpinButtonWidth = ImGui::GetItemRectSize().x;
-        firstFrame = false;
-    }
+    // larger of the two, just so its consistent
+    float unpinAllWidth = ImGui::CalcTextSize("Unpin all").x;
+    float lastColumnNameWidth = ImGui::CalcTextSize(lastColumnButtonName).x;
+    float lastColumnWidth = unpinAllWidth;
+    // static bool firstFrame = true;
+    // static float unpinButtonWidth = 0.0f;
+    // if(firstFrame)
+    // {
+    //     ImGui::Button("Unpin");
+    //     unpinButtonWidth = ImGui::GetItemRectSize().x;
+    //     firstFrame = false;
+    // }
 
     const ImVec2 outer_size = ImVec2(0, height);
     // +1 because the last column with the pin/unpin buttons isnt part of columnHeaders
@@ -151,13 +165,65 @@ void Table::draw(float height, bool updateColumnsState, bool stateToSet)
         {
             ImGui::TableSetupColumn(header.name.c_str(), header.flags, header.width);
         }
-        // todo: unhardcode the 50 here, calculate the exact button width
         ImGui::TableSetupColumn(
             "Pin/Unpin",
             ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
                 ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_NoHeaderLabel,
-            unpinButtonWidth);
-        ImGui::TableHeadersRow();
+            lastColumnWidth);
+
+        // ImGui::TableHeadersRow();
+        // Setup rows manually (code taken from TableHeadersRow())
+        {
+            ImGuiContext& g = *GImGui;
+            ImGuiTable* table = g.CurrentTable;
+
+            // Layout if not already done (this is automatically done by TableNextRow, we do it here solely to
+            // facilitate stepping in debugger as it is frequent to step in TableUpdateLayout)
+            if(!table->IsLayoutLocked)
+                ImGui::TableUpdateLayout(table);
+
+            // Open row
+            const float row_y1 = ImGui::GetCursorScreenPos().y;
+            const float row_height = ImGui::TableGetHeaderRowHeight();
+            ImGui::TableNextRow(ImGuiTableRowFlags_Headers, row_height);
+
+            const int columns_count = ImGui::TableGetColumnCount();
+            for(int column_n = 0; column_n < columns_count; column_n++)
+            {
+                if(!ImGui::TableSetColumnIndex(column_n))
+                    continue;
+
+                // Push an id to allow unnamed labels (generally accidental, but let's behave nicely with them)
+                // - in your own code you may omit the PushID/PopID all-together, provided you know they won't
+                // collide
+                // - table->InstanceCurrent is only >0 when we use multiple BeginTable/EndTable calls with same
+                // identifier.
+                const char* name = (ImGui::TableGetColumnFlags(column_n) & ImGuiTableColumnFlags_NoHeaderLabel)
+                                       ? ""
+                                       : ImGui::TableGetColumnName(column_n);
+                ImGui::PushID(table->InstanceCurrent * table->ColumnsCount + column_n);
+                auto x = ImGui::GetContentRegionAvail().x;
+                if(column_n == columns_count - 1)
+                {
+                    ImGui::Dummy(ImVec2((lastColumnWidth - lastColumnNameWidth) * 0.5f, 0.0f));
+                    ImGui::SameLine(0.0f, 0.0f);
+                    ImGui::Text("%s", lastColumnButtonName);
+                    if(ImGui::IsItemClicked(ImGuiMouseButton_Left))
+                    {
+                        lastColumnHeaderButtonAction();
+                    }
+                    ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+                }
+                ImGui::TableHeader(name);
+                ImGui::PopID();
+            }
+
+            // Allow opening popup from the right-most section after the last column.
+            ImVec2 mouse_pos = ImGui::GetMousePos();
+            if(ImGui::IsMouseReleased(1) && ImGui::TableGetHoveredColumn() == columns_count)
+                if(mouse_pos.y >= row_y1 && mouse_pos.y < row_y1 + row_height)
+                    ImGui::TableOpenContextMenu(-1); // Will open a non-column-specific popup.
+        }
 
         // Sort our data if sort specs have been changed!
         if(ImGuiTableSortSpecs* sorts_specs = ImGui::TableGetSortSpecs())
@@ -257,7 +323,7 @@ void Table::draw(float height, bool updateColumnsState, bool stateToSet)
                 }
 
                 ImGui::TableSetColumnIndex(14);
-                lastColumnButton(row, unpinButtonWidth, &removeAfterFrame);
+                lastColumnButton(row, lastColumnWidth, &removeAfterFrame);
 
                 ImGui::PopID();
             }

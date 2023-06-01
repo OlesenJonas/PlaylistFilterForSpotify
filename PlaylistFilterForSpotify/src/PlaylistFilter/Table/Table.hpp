@@ -36,8 +36,9 @@ class Table
 
     const char* tableName = "";
     const char* hiddenPlayButtonID = "";
-    const char* lastColumnID = "";
+    const char* lastColumnButtonName = "";
     virtual void lastColumnButton(int row, float buttonWidth, int* flag) = 0;
+    virtual void lastColumnHeaderButtonAction() = 0;
     virtual void additionalLogic() = 0;
 
     static constexpr ImGuiTableFlags flags =      //
@@ -69,6 +70,7 @@ class PinnedTracksTable : public Table
   private:
     ImVec2 getTableSize() final;
     void lastColumnButton(int row, float buttonWidth, int* flag) final;
+    void lastColumnHeaderButtonAction() final;
     void additionalLogic() final;
 };
 class FilteredTracksTable : public Table
@@ -79,5 +81,6 @@ class FilteredTracksTable : public Table
   private:
     ImVec2 getTableSize() final;
     void lastColumnButton(int row, float buttonWidth, int* flag) final;
+    void lastColumnHeaderButtonAction() final;
     void additionalLogic() final;
 };

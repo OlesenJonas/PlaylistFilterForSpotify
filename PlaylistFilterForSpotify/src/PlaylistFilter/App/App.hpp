@@ -42,6 +42,9 @@ class App
 
     Track* raycastAgainstGraphingBuffer(glm::vec3 rayPos, glm::vec3 rayDir);
 
+    bool clearPinsAfterFrame = false;
+    bool pinAllAfterFrame = false;
+
   private:
     enum State
     {
