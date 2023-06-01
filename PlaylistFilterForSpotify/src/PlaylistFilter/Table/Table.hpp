@@ -19,7 +19,7 @@ class Table
     Table(Table&&) = delete;                  // move constr
     Table& operator=(Table&& other) = delete; // move assign
 
-    void draw(float height);
+    void draw(float height, bool updateColumnsState, bool stateToSet);
     void calcHeaderWidth();
     void sortData();
 
@@ -37,23 +37,20 @@ class Table
     const char* tableName = "";
     const char* hiddenPlayButtonID = "";
     const char* lastColumnID = "";
-    virtual void lastColumnButton(int row, int* flag) = 0;
+    virtual void lastColumnButton(int row, float buttonWidth, int* flag) = 0;
     virtual void additionalLogic() = 0;
 
-    static constexpr ImGuiTableFlags flags = //
-        ImGuiTableFlags_ScrollY |            //
-        ImGuiTableFlags_RowBg |              //
-        ImGuiTableFlags_BordersOuter |       //
-        ImGuiTableFlags_BordersV |           //
-        ImGuiTableFlags_SizingFixedFit |     //
-        ImGuiTableFlags_Sortable |           //
-        ImGuiTableFlags_NoSavedSettings;
-    static constexpr ImGuiTableColumnFlags defaultColumnFlag = //
-        ImGuiTableColumnFlags_WidthFixed |                     //
-        ImGuiTableColumnFlags_NoResize;
-    static constexpr ImGuiTableColumnFlags noSortColumnFlag = //
-        defaultColumnFlag |                                   //
-        ImGuiTableColumnFlags_NoSort;
+    static constexpr ImGuiTableFlags flags =      //
+        ImGuiTableFlags_ScrollY                   //
+        | ImGuiTableFlags_RowBg                   //
+        | ImGuiTableFlags_BordersOuter            //
+        | ImGuiTableFlags_BordersV                //
+        | ImGuiTableFlags_SizingStretchSame       //
+        | ImGuiTableFlags_Resizable               //
+        | ImGuiTableFlags_Sortable                //
+        | ImGuiTableFlags_NoSavedSettings         //
+        | ImGuiTableFlags_AlwaysVerticalScrollbar //
+        | ImGuiTableFlags_Hideable;               //
 
     std::vector<ColumnHeader> columnHeaders;
 
@@ -71,7 +68,7 @@ class PinnedTracksTable : public Table
 
   private:
     ImVec2 getTableSize() final;
-    void lastColumnButton(int row, int* flag) final;
+    void lastColumnButton(int row, float buttonWidth, int* flag) final;
     void additionalLogic() final;
 };
 class FilteredTracksTable : public Table
@@ -81,6 +78,6 @@ class FilteredTracksTable : public Table
 
   private:
     ImVec2 getTableSize() final;
-    void lastColumnButton(int row, int* flag) final;
+    void lastColumnButton(int row, float buttonWidth, int* flag) final;
     void additionalLogic() final;
 };

@@ -395,10 +395,14 @@ void App::createMainUI()
         static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
         ImGui::ShowDemoWindow(&show_demo_window);
 #endif
-
+        static float minWindowWidth = 0.0f;
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(minWindowWidth, 0.f));
+        minWindowWidth = 0.0f;
+        // ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
         if(ImGui::Begin("Playlist Data | Tab to toggle window visibility", nullptr, ImGuiWindowFlags_NoCollapse))
         {
-            float fullWindowContentHeight = ImGui::GetContentRegionAvail().y;
+            ImVec2 fullWindowContentSize = ImGui::GetContentRegionAvail();
+
             if(canLoadCovers)
             {
                 // ImGui::SameLine();
@@ -454,23 +458,31 @@ void App::createMainUI()
                 pinnedTracksTableHeight,
                 pinnedTracksTable.rowSize.y * (std::max<int>(1, pinnedTracks.size()) + 0.7f));
 
-            pinnedTracksTable.draw(pinnedTracksTableHeight);
+            pinnedTracksTable.draw(
+                pinnedTracksTableHeight, updateAudioFeatureColumnsState, audioFeatureColumnsStateToSet);
+            updateAudioFeatureColumnsState = false;
             if(!pinnedTracks.empty())
             {
+                static float exportWidth = 50.0f;
+                static float recommendationsWidth = renderer.scaleByDPI(1000.f);
+                static float createFilterWidth = renderer.scaleByDPI(189.f);
+
                 if(ImGui::Button("Export to playlist##pins"))
                 {
                     // todo: promt popup to ask for PL name
                     createPlaylist(pinnedTracks);
                 }
-                float buttonHeight = ImGui::GetItemRectSize().y;
+                auto buttonSize = ImGui::GetItemRectSize();
+                float buttonHeight = buttonSize.y;
+                exportWidth = buttonSize.x;
 
-                static float recommendationsWidth = renderer.scaleByDPI(1000.f);
-                float regionAvail = ImGui::GetContentRegionAvailWidth();
-                ImGui::SameLine((regionAvail - recommendationsWidth) / 2.0f);
-                // ImGui::SameLine();
+                float freeSpaceInMiddle = fullWindowContentSize.x - exportWidth - createFilterWidth -
+                                          2 * ImGui::GetStyle().ItemSpacing.x;
+                ImGui::SameLine(
+                    exportWidth + 2 * ImGui::GetStyle().ItemSpacing.x +
+                    (freeSpaceInMiddle - recommendationsWidth) / 2);
                 ImGui::BeginGroup();
                 {
-
                     ImGui::Text("Recommend tracks to pin:");
                     ImGui::SameLine();
                     if(ImGui::Button("Based on tracks"))
@@ -500,8 +512,7 @@ void App::createMainUI()
                 ImGui::EndGroup();
                 recommendationsWidth = ImGui::GetItemRectSize().x;
 
-                static float createFilterWidth = renderer.scaleByDPI(189.f);
-                ImGui::SameLine(regionAvail - createFilterWidth);
+                ImGui::SameLine(fullWindowContentSize.x - createFilterWidth + ImGui::GetStyle().ItemSpacing.x);
                 if(ImGui::Button("Create filters from pinned tracks"))
                 {
                     // todo: XYZ(vector<Track*> v) that fills filter
@@ -520,6 +531,9 @@ void App::createMainUI()
                     filterDirty = true;
                 }
                 createFilterWidth = ImGui::GetItemRectSize().x;
+
+                minWindowWidth = exportWidth + recommendationsWidth + createFilterWidth +
+                                 (2 + 2) * ImGui::GetStyle().ItemSpacing.x;
             }
             ImGui::Separator();
 
@@ -529,22 +543,54 @@ void App::createMainUI()
             float filteredTracksTableHeight = windowContentHeightForFiltered - ImGui::GetFrameHeight() -
                                               0.5f * ImGui::GetStyle().WindowPadding.y;
 
-            filteredTracksTable.draw(filteredTracksTableHeight);
+            filteredTracksTable.draw(filteredTracksTableHeight, false, false);
             if(ImGui::Button("Export to playlist"))
             {
                 // todo: promt popup to ask for PL name
                 createPlaylist(filteredTracks);
             }
-            static float pinAllSize = renderer.scaleByDPI(45.f);
+            float exportWidth = ImGui::GetItemRectSize().x;
+            static float pinAllWidth = renderer.scaleByDPI(45.f);
+            static float audioFeatureButtonsWidth = 0.f;
+
+            float freeSpaceInMiddle =
+                fullWindowContentSize.x - exportWidth - pinAllWidth - 2 * ImGui::GetStyle().ItemSpacing.x;
+            ImGui::SameLine(
+                exportWidth + 2 * ImGui::GetStyle().ItemSpacing.x +
+                (freeSpaceInMiddle - audioFeatureButtonsWidth) / 2);
+            ImGui::BeginGroup();
+            {
+                ImGui::Text("Audio feature columns:");
+                ImGui::SameLine();
+                if(ImGui::Button("Hide all"))
+                {
+                    updateAudioFeatureColumnsState = true;
+                    audioFeatureColumnsStateToSet = false;
+                }
+                ImGui::SameLine();
+                if(ImGui::Button("Show all"))
+                {
+                    updateAudioFeatureColumnsState = true;
+                    audioFeatureColumnsStateToSet = true;
+                }
+            }
+            ImGui::EndGroup();
+            audioFeatureButtonsWidth = ImGui::GetItemRectSize().x;
+
             // ImGui::SameLine(filteredTracksTable.width - pinAllSize);
-            ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - pinAllSize);
+            ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - pinAllWidth + ImGui::GetStyle().ItemSpacing.x);
             if(ImGui::Button("Pin all"))
             {
                 pinTracks(filteredTracks);
             }
-            pinAllSize = ImGui::GetItemRectSize().x;
+            pinAllWidth = ImGui::GetItemRectSize().x;
+
+            minWindowWidth = std::max<float>(
+                minWindowWidth,
+                exportWidth + audioFeatureButtonsWidth + pinAllWidth + (2 + 2) * ImGui::GetStyle().ItemSpacing.x);
         }
         ImGui::End(); // Playlist Data Window
+        ImGui::PopStyleVar();
 
         if(showRecommendations)
         {

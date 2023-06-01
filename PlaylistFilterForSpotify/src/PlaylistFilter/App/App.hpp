@@ -133,6 +133,8 @@ class App
     std::vector<Track*> filteredTracks;
     FilteredTracksTable filteredTracksTable;
     bool displayOnlySelectedGenres = false;
+    bool updateAudioFeatureColumnsState = false;
+    bool audioFeatureColumnsStateToSet = false;
 
     // Pin related variables
     std::vector<Track*> pinnedTracks;

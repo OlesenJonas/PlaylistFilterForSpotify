@@ -1,6 +1,8 @@
 #pragma once
 #include "Table.hpp"
+#include "ImGui/imgui.h"
 #include "Table/Table.hpp"
+#include "Track/Track.hpp"
 #include <App/App.hpp>
 
 PinnedTracksTable::PinnedTracksTable(App& p_app, std::vector<Track*>& p_tracks) : Table(p_app, p_tracks)
@@ -27,17 +29,17 @@ ImVec2 FilteredTracksTable::getTableSize()
     return {width, rowSize.y * 14};
 }
 
-void PinnedTracksTable::lastColumnButton(int row, int* flag)
+void PinnedTracksTable::lastColumnButton(int row, float buttonWidth, int* flag)
 {
     if(ImGui::Button("Unpin"))
     {
         *flag = row;
     }
 }
-void FilteredTracksTable::lastColumnButton(int row, int* flag)
+void FilteredTracksTable::lastColumnButton(int row, float buttonWidth, int* flag)
 {
     (void)flag;
-    if(ImGui::Button("Pin"))
+    if(ImGui::Button("Pin", ImVec2(buttonWidth, 0)))
     {
         app.pinTrack(tracks[row]);
     }
@@ -55,15 +57,19 @@ void Table::calcHeaderWidth()
     rowSize = {0.0f, coverSize};
 
     columnHeaders = {
-        {"#", defaultColumnFlag, coverSize},
-        {"", noSortColumnFlag, coverSize},
-        {"Name", noSortColumnFlag, 0},
-        {"Artist(s)", noSortColumnFlag, 0}};
+        {"#", ImGuiTableColumnFlags_NoHide, coverSize},
+        {"Cover",
+         ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+             ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_NoHeaderLabel,
+         coverSize},
+        {"Name", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_NoHide, 0},
+        {"Artist(s)", ImGuiTableColumnFlags_NoSort, 0}};
     for(const std::string_view& name : Track::FeatureNames)
     {
-        columnHeaders.push_back({name.data(), defaultColumnFlag, 0});
+        columnHeaders.push_back({name.data(), 0, 0});
     }
-    columnHeaders.push_back({"Genres", noSortColumnFlag, 0});
+    columnHeaders[columnHeaders.size() - 1].flags |= ImGuiTableColumnFlags_DefaultHide;
+    columnHeaders.push_back({"Genres", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_NoResize, 0});
     const int pad = app.getRenderer().scaleByDPI(10.0f);
     for(auto i = 4; i < columnHeaders.size(); i++)
     {
@@ -113,20 +119,44 @@ void Table::sortData()
     }
 }
 
-void Table::draw(float height)
+void Table::draw(float height, bool updateColumnsState, bool stateToSet)
 {
     assert(strcmp(tableName, "") != 0);
     assert(strcmp(lastColumnID, "") != 0);
 
-    const ImVec2 outer_size = ImVec2(0, height);
-    if(ImGui::BeginTable(tableName, columnHeaders.size() + 1, flags, outer_size))
+    static bool firstFrame = true;
+    static float unpinButtonWidth = 0.0f;
+    if(firstFrame)
     {
+        ImGui::Button("Unpin");
+        unpinButtonWidth = ImGui::GetItemRectSize().x;
+        firstFrame = false;
+    }
+
+    const ImVec2 outer_size = ImVec2(0, height);
+    // +1 because the last column with the pin/unpin buttons isnt part of columnHeaders
+    // hardcoded table name, so both tables have same ID -> settings like size, visibility are shared
+    if(ImGui::BeginTable("trackTable", columnHeaders.size() + 1, flags, outer_size))
+    {
+        if(updateColumnsState)
+        {
+            for(int i = 0; i < Track::featureAmount; i++)
+            {
+                ImGui::TableSetColumnEnabled(4 + i, stateToSet);
+            }
+        }
+
         ImGui::TableSetupScrollFreeze(0, 1); // Make top row always visible
         for(const auto& header : columnHeaders)
         {
             ImGui::TableSetupColumn(header.name.c_str(), header.flags, header.width);
         }
-        ImGui::TableSetupColumn(lastColumnID, noSortColumnFlag, app.getRenderer().scaleByDPI(50.f));
+        // todo: unhardcode the 50 here, calculate the exact button width
+        ImGui::TableSetupColumn(
+            "Pin/Unpin",
+            ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize |
+                ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_NoHeaderLabel,
+            unpinButtonWidth);
         ImGui::TableHeadersRow();
 
         // Sort our data if sort specs have been changed!
@@ -227,7 +257,7 @@ void Table::draw(float height)
                 }
 
                 ImGui::TableSetColumnIndex(14);
-                lastColumnButton(row, &removeAfterFrame);
+                lastColumnButton(row, unpinButtonWidth, &removeAfterFrame);
 
                 ImGui::PopID();
             }
