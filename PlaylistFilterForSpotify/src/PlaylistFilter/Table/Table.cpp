@@ -19,16 +19,6 @@ FilteredTracksTable::FilteredTracksTable(App& p_app, std::vector<Track*>& p_trac
     hiddenPlayButtonID = "hiddenPlayButton##filtered";
 }
 
-ImVec2 PinnedTracksTable::getTableSize()
-{
-    // atm the pinned table is limited to displaying 4 tracks at once (and a small margin of 0.7)
-    return {width, rowSize.y * (std::min<int>(tracks.size(), 4) + 0.7f)};
-}
-ImVec2 FilteredTracksTable::getTableSize()
-{
-    return {width, rowSize.y * 14};
-}
-
 void PinnedTracksTable::lastColumnButton(int row, float buttonWidth, int* flag)
 {
     if(ImGui::Button("Unpin", ImVec2(buttonWidth, 0)))
@@ -97,21 +87,6 @@ void Table::calcHeaderWidth()
     // Artist name: 18 characters
     size = ImGui::CalcTextSize("MMMMMMMMMMMMMMMMMM");
     columnHeaders[3].width = std::max(columnHeaders[2].width, size.x);
-
-    width = ImGui::GetStyle().ChildBorderSize;
-    for(const auto& header : columnHeaders)
-    {
-        width += header.width;
-        width += 2 * ImGui::GetStyle().CellPadding.x;
-        width += ImGui::GetStyle().ChildBorderSize;
-    }
-
-    // hardcode add width for the last "empty" column (no header just contains the (un-)pin buttons)
-    //  todo: should really be part of the columnHeaders array
-    //  50.0f is the currently used hardcoded value for the columnwidth
-    width += renderer.scaleByDPI(50.0f);
-    width += 2 * ImGui::GetStyle().CellPadding.x;
-    width += ImGui::GetStyle().ChildBorderSize;
 };
 
 void Table::sortData()

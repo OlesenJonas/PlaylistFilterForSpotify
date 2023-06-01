@@ -23,8 +23,6 @@ class Table
     void calcHeaderWidth();
     void sortData();
 
-    float width = 0.f;
-
     float coverSize = 40.0f;
     ImVec2 rowSize{0.0f, coverSize};
 
@@ -57,8 +55,6 @@ class Table
 
     int columnToSortBy = 0;
     bool sortAscending = false;
-
-    virtual ImVec2 getTableSize() = 0;
 };
 
 // dont even *really* need inheritance here
@@ -68,7 +64,6 @@ class PinnedTracksTable : public Table
     PinnedTracksTable(App& p_app, std::vector<Track*>& p_tracks);
 
   private:
-    ImVec2 getTableSize() final;
     void lastColumnButton(int row, float buttonWidth, int* flag) final;
     void lastColumnHeaderButtonAction() final;
     void additionalLogic() final;
@@ -79,7 +74,6 @@ class FilteredTracksTable : public Table
     FilteredTracksTable(App& p_app, std::vector<Track*>& p_tracks);
 
   private:
-    ImVec2 getTableSize() final;
     void lastColumnButton(int row, float buttonWidth, int* flag) final;
     void lastColumnHeaderButtonAction() final;
     void additionalLogic() final;
