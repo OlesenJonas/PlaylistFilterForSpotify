@@ -420,7 +420,8 @@ void App::createMainUI()
         ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(minWindowWidth, 0.f));
         minWindowWidth = 0.0f;
         // ImGui::SetNextWindowSizeConstraints(ImVec2(-1, -1), ImVec2(-1, -1));
-        if(ImGui::Begin("Playlist Data | Tab to toggle window visibility", nullptr, ImGuiWindowFlags_NoCollapse))
+        std::string windowTitle = playlistName + " | Tab to toggle window visibility";
+        if(ImGui::Begin(windowTitle.c_str(), nullptr, ImGuiWindowFlags_NoCollapse))
         {
             ImVec2 fullWindowContentSize = ImGui::GetContentRegionAvail();
 
