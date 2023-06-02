@@ -70,9 +70,12 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void resizeCallback(GLFWwindow* window, int w, int h)
 {
-    Renderer* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
-    renderer->width = w;
-    renderer->height = h;
-    renderer->cam.setAspect(static_cast<float>(w) / static_cast<float>(h));
-    glViewport(0, 0, w, h);
+    if(w > 0 && h > 0)
+    {
+        auto* renderer = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
+        renderer->width = w;
+        renderer->height = h;
+        renderer->cam.setAspect(static_cast<float>(w) / static_cast<float>(h));
+        glViewport(0, 0, w, h);
+    }
 }
