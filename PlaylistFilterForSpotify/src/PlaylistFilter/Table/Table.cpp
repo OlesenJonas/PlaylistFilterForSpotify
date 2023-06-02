@@ -47,15 +47,14 @@ void FilteredTracksTable::lastColumnHeaderButtonAction()
 
 Table::Table(App& p_app, std::vector<Track*>& p_tracks) : app(p_app), tracks(p_tracks)
 {
+    const Renderer& renderer = app.getRenderer();
+    coverSize = renderer.scaleByDPI(coverSize);
+    rowSize = {0.0f, coverSize};
     calcHeaderWidth();
 }
 
 void Table::calcHeaderWidth()
 {
-    const Renderer& renderer = app.getRenderer();
-    coverSize = renderer.scaleByDPI(coverSize);
-    rowSize = {0.0f, coverSize};
-
     // should be more than enough digits
     std::string numbersLength = "88888888888888888";
     int maxNumber = app.getNumberOfTracks();
