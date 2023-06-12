@@ -7,7 +7,7 @@ Useful for
   - Recommendations (based on Artists and Tracks)
   - Genres
 
-(These are my personal use-cases, and whats currently supported. For further features see: [WIP](#wip))\
+(These are my personal use-cases, and whats currently supported. For further features see: [WIP](#wip))
 
 Filtering Overview
 ![Filtering Overview](images/filtering.png)
@@ -61,8 +61,8 @@ These are things I think are useful but are not implemented yet (and may never b
   - access-token timeout (shouldnt happen atm since its automatically refreshed, but better to be safe than sorry)
   - Api requests limit (blocking other requests once limit is reached, and re-sending failed ones)
 - Fuzzy-String comparisons for searching
-- Manually control "Split" between Pinned- and Filtered- tracks tables
+- Manually control "Split" between Pinned- and Filtered- tracks tables in the main windpow
 - More Font ranges (currently only chinese, korean and japanese are loaded in addition to latin characters)
-- Make loading the covers safer (currently pretty unsafe with .death()-ed threads, no guarantee they finish)
+- Safer loading of album covers (currently downloads and uploads to GPU are just fire-and-forget through detached threads, without checking if they even finish)
 - Option to combine genres in different ways (currently track just needs to match *any* of the selected genres) but matching *all* genres could also be beneficial
 - Better (looking) UI
